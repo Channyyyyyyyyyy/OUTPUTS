@@ -272,7 +272,7 @@
         <div id="chartContainer">
             <div class="chart-wrapper">
                 <h2 class="chart-title">Genre Earnings</h2>
-                <canvas id="barChart"></canvas>
+                <canvas id="pieChart"></canvas>
             </div>
             <div class="chart-wrapper">
                 <h2 class="chart-title">Earnings Distribution</h2>
@@ -300,7 +300,7 @@
     </div>
 
     <script>
-        let barChart, donutChart;
+        let pieChart, donutChart;
         let processedData = null;
         
         // Generate random colors for chart segments
@@ -387,16 +387,16 @@
                 animateValue(document.getElementById('averageEarnings'), 0, totalEarnings / gameCount, 1500, true);
 
                 // Prepare data for charts
-                const barLabels = Object.keys(genreEarningsMap);
-                const barData = barLabels.map(genre => genreEarningsMap[genre]);
-                const donutData = barLabels.map(genre => (genreEarningsMap[genre] / totalEarnings) * 100);
+                const pieLabels = Object.keys(genreEarningsMap);
+                const pieData = pieLabels.map(genre => genreEarningsMap[genre]);
+                const donutData = pieLabels.map(genre => (genreEarningsMap[genre] / totalEarnings) * 100);
                 
                 // Generate colors for the charts
-                const backgroundColors = generateRandomColors(barLabels.length);
+                const backgroundColors = generateRandomColors(pieLabels.length);
 
                 // Create charts
-                createBarChart(barLabels, barData, backgroundColors);
-                createDonutChart(barLabels, donutData, backgroundColors);
+                createPieChart(pieLabels, pieData, backgroundColors);
+                createDonutChart(pieLabels, donutData, backgroundColors);
                 
                 // Populate the game table
                 populateGameTable(gameData);
@@ -448,21 +448,21 @@
             return '$' + value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
         }
 
-        function createBarChart(labels, data, colors) {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (barChart) {
-                barChart.destroy(); // Destroy previous chart instance
+        function createPieChart(labels, data, colors) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (pieChart) {
+                pieChart.destroy(); // Destroy previous chart instance
             }
-            barChart = new Chart(ctx, {
-                type: 'bar',
+            pieChart = new Chart(ctx, {
+                type: 'pie', // Changed from 'bar' to 'pie'
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Revenue ($)',
                         data: data,
                         backgroundColor: colors,
-                        borderColor: colors.map(color => color.replace('0.8', '1')),
-                        borderWidth: 1
+                        borderColor: 'white',
+                        borderWidth: 2,
+                        hoverOffset: 15
                     }]
                 },
                 options: {
@@ -470,27 +470,31 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return formatCurrency(context.parsed.y);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(2);
+                                    return [
+                                        `${label}:`,
+                                        `${formatCurrency(value)} (${percentage}%)`
+                                    ];
                                 }
                             }
                         }
                     },
                     animation: {
+                        animateRotate: true,
+                        animateScale: true,
                         duration: 1500,
                         easing: 'easeOutQuart'
                     }
