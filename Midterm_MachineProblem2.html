@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Genre Earnings Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #f72585;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-light: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        #fileInput {
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            background-color: white;
+            width: 100%;
+            max-width: 350px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        #processButton {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        #processButton:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        #exportButton {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        #exportButton:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .earnings-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .earnings-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .earnings-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .earnings-card h3 {
+            margin-top: 0;
+            color: var(--text-light);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .earnings-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+        
+        .earnings-card .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        #chartContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .chart-wrapper {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+        
+        .chart-wrapper:hover {
+            transform: translateY(-5px);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+        }
+        
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 400px;
+        }
+        
+        #statistics {
+            margin-top: 30px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        #statistics h2 {
+            color: var(--secondary-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        #gameTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        #gameTable th, #gameTable td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        #gameTable th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        #gameTable tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        #gameTable tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            #chartContainer {
+                grid-template-columns: 1fr;
+            }
+            
+            .earnings-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .earnings-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Game Genre Earnings Analysis</h1>
+        </header>
+        
+        <div class="controls">
+            <input type="file" id="fileInput" accept=".csv">
+            <button id="processButton">Process Data</button>
+            <button id="exportButton">Export Data</button>
+        </div>
+        
+        <div class="earnings-cards">
+            <div class="earnings-card">
+                <h3>Total Earnings</h3>
+                <div id="totalEarnings" class="value">$0.00</div>
+                <div class="subtitle">Across all games</div>
+            </div>
+            <div class="earnings-card">
+                <h3>Total Games</h3>
+                <div id="totalGames" class="value">0</div>
+                <div class="subtitle">Game count</div>
+            </div>
+            <div class="earnings-card">
+                <h3>Total Genres</h3>
+                <div id="totalGenres" class="value">0</div>
+                <div class="subtitle">Genre count</div>
+            </div>
+            <div class="earnings-card">
+                <h3>Average per Game</h3>
+                <div id="averageEarnings" class="value">$0.00</div>
+                <div class="subtitle">Mean earnings</div>
+            </div>
+        </div>
+        
+        <div id="chartContainer">
+            <div class="chart-wrapper">
+                <h2 class="chart-title">Genre Earnings</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h2 class="chart-title">Earnings Distribution</h2>
+                <canvas id="donutChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="statistics">
+            <h2>Game Data</h2>
+            <div style="overflow-x: auto;">
+                <table id="gameTable">
+                    <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Genre</th>
+                            <th>Earnings</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gameTableBody">
+                        <!-- Game data will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let barChart, donutChart;
+        let processedData = null;
+        
+        // Generate random colors for chart segments
+        function generateRandomColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                const hue = Math.floor(Math.random() * 360);
+                colors.push(`hsla(${hue}, 70%, 60%, 0.8)`);
+            }
+            return colors;
+        }
+
+        document.getElementById('processButton').addEventListener('click', processCSV);
+        document.getElementById('exportButton').addEventListener('click', exportData);
+
+        function processCSV() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please upload a CSV file.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = event.target.result;
+                const lines = data.split('\n');
+                const genreEarningsMap = {};
+                let totalEarnings = 0;
+                let gameCount = 0;
+                const gameData = [];
+                
+                // Determine column indices (for better compatibility with different CSV formats)
+                const header = lines[0].split(',');
+                const gameNameIndex = header.findIndex(col => col.toLowerCase().includes('name') || col.toLowerCase().includes('title'));
+                const genreIndex = header.findIndex(col => col.toLowerCase().includes('genre'));
+                const earningsIndex = header.findIndex(col => col.toLowerCase().includes('money') || col.toLowerCase().includes('earnings') || col.toLowerCase().includes('revenue'));
+                
+                if (genreIndex === -1 || earningsIndex === -1) {
+                    alert("Could not identify required columns in the CSV. Please ensure your CSV has genre and earnings/money columns.");
+                    return;
+                }
+
+                // Skip header
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue; // Skip empty lines
+                    
+                    const columns = lines[i].split(',');
+                    if (columns.length > Math.max(genreIndex, earningsIndex)) {
+                        const gameName = gameNameIndex !== -1 ? columns[gameNameIndex].trim() : `Game ${i}`;
+                        const genre = columns[genreIndex].trim();
+                        const earningsStr = columns[earningsIndex].trim();
+                        
+                        if (genre && earningsStr) {
+                            const earnings = parseFloat(earningsStr);
+                            if (!isNaN(earnings)) {
+                                totalEarnings += earnings;
+                                genreEarningsMap[genre] = (genreEarningsMap[genre] || 0) + earnings;
+                                gameCount++;
+                                
+                                gameData.push({
+                                    name: gameName,
+                                    genre: genre,
+                                    earnings: earnings
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                // Store processed data for potential export
+                processedData = {
+                    genreEarningsMap,
+                    totalEarnings,
+                    gameCount,
+                    gameData
+                };
+
+                // Update statistics display with animation
+                animateValue(document.getElementById('totalEarnings'), 0, totalEarnings, 1500, true);
+                animateValue(document.getElementById('totalGames'), 0, gameCount, 1000, false);
+                animateValue(document.getElementById('totalGenres'), 0, Object.keys(genreEarningsMap).length, 800, false);
+                animateValue(document.getElementById('averageEarnings'), 0, totalEarnings / gameCount, 1500, true);
+
+                // Prepare data for charts
+                const barLabels = Object.keys(genreEarningsMap);
+                const barData = barLabels.map(genre => genreEarningsMap[genre]);
+                const donutData = barLabels.map(genre => (genreEarningsMap[genre] / totalEarnings) * 100);
+                
+                // Generate colors for the charts
+                const backgroundColors = generateRandomColors(barLabels.length);
+
+                // Create charts
+                createBarChart(barLabels, barData, backgroundColors);
+                createDonutChart(barLabels, donutData, backgroundColors);
+                
+                // Populate the game table
+                populateGameTable(gameData);
+            };
+            reader.readAsText(file);
+        }
+        
+        function populateGameTable(gameData) {
+            const tableBody = document.getElementById('gameTableBody');
+            tableBody.innerHTML = ''; // Clear existing rows
+            
+            // Sort games by earnings (highest first)
+            gameData.sort((a, b) => b.earnings - a.earnings);
+            
+            gameData.forEach(game => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = game.name;
+                row.appendChild(nameCell);
+                
+                const genreCell = document.createElement('td');
+                genreCell.textContent = game.genre;
+                row.appendChild(genreCell);
+                
+                const earningsCell = document.createElement('td');
+                earningsCell.textContent = formatCurrency(game.earnings);
+                row.appendChild(earningsCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function animateValue(element, start, end, duration, isCurrency) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = progress * (end - start) + start;
+                element.innerHTML = isCurrency ? formatCurrency(value) : Math.floor(value).toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+        
+        function formatCurrency(value) {
+            return '$' + value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        function createBarChart(labels, data, colors) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChart) {
+                barChart.destroy(); // Destroy previous chart instance
+            }
+            barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function createDonutChart(labels, data, colors) {
+            const ctx = document.getElementById('donutChart').getContext('2d');
+            if (donutChart) {
+                donutChart.destroy(); // Destroy previous chart instance
+            }
+            donutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: 'white',
+                        borderWidth: 2,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const earnings = processedData ? processedData.genreEarningsMap[label] : 0;
+                                    return [
+                                        `${label}: ${value.toFixed(2)}%`,
+                                        `Earnings: ${formatCurrency(earnings)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeOutBack'
+                    }
+                }
+            });
+        }
+
+        function exportData() {
+            if (!processedData) {
+                alert("Please process data first before exporting.");
+                return;
+            }
+            
+            // Create CSV content with all game data
+            let csvContent = "Game,Genre,Earnings\n";
+            processedData.gameData.forEach(game => {
+                csvContent += `"${game.name}","${game.genre}",${game.earnings}\n`;
+            });
+            
+            // Add summary at the end
+            csvContent += "\nSummary:\n";
+            csvContent += `Total Earnings,${processedData.totalEarnings}\n`;
+            csvContent += `Total Games,${processedData.gameCount}\n`;
+            csvContent += `Total Genres,${Object.keys(processedData.genreEarningsMap).length}\n`;
+            csvContent += `Average Earnings per Game,${processedData.totalEarnings / processedData.gameCount}\n\n`;
+            
+            csvContent += "Genre Breakdown:\n";
+            for (const [genre, earnings] of Object.entries(processedData.genreEarningsMap)) {
+                const percentage = (earnings / processedData.totalEarnings * 100).toFixed(2);
+                csvContent += `${genre},${earnings},${percentage}%\n`;
+            }
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'game_earnings_analysis.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
