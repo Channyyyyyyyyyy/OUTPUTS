@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Calculator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: url('https://source.unsplash.com/1600x900/?gaming,cyberpunk') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: conic-gradient(from 65deg,gold,purple);
+            color: white;
+        }
+        .container {
+            display: flex;
+            flex-direction: row; /* Change to row to accommodate the formula section */
+            align-items: flex-start; /* Align items to the start */
+            width: 80%; /* Adjusted width */
+            background: rgba(0, 0, 0, 0.8);
+            padding: 18px; /* Reduced from 20px to 18px */
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgb(6, 149, 162);
+            text-align: center;
+        }
+        .formula-container {
+            width: 30%; /* Width for the formula section */
+            padding: 10px;
+            border: 2px solid #0ff; /* Border for the formula section */
+            border-radius: 10px; /* Rounded corners */
+            margin-right: 20px; /* Space between formula and book container */
+            background: rgba(0, 0, 0, 0.7); /* Background color */
+            text-align: left; /* Align text to the left */
+            height: auto; /* Adjust height as needed */
+        }
+        .book-container {
+            display: flex;
+            width: 70%; /* Adjusted width for the book container */
+        }
+        .page {
+            width: 45%; /* Reduced from 50% to 45% */
+            padding: 18px; /* Reduced from 20px to 18px */
+            border: solid,white;
+            border-radius: 10px;
+            margin: 5px;
+        }
+        input {
+            width: 90%; /* Reduced from 100% to 90% */
+            padding: 9px; /* Reduced from 10px to 9px */
+            margin: 5px 0;
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0ff;
+        }
+        button {
+            background-color: #ff00ff;
+            color: white;
+            padding: 9px 18px; /* Reduced from 10px 20px to 9px 18px */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .absence {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .error-message {
+            color: #ff0000;
+            font-size: 0.8em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="formula-container">
+                <h3>Student Name:</h3>
+                <input type="text" id="studentName" placeholder="Enter Name">
+            <h3>Formulas</h3>
+            <pre>
+Lecture Prelim Grade = (0.6 * Prelim Exam) + 
+(0.4 * Prelim Class Standing)
+Prelim Class Standing = (0.6 * Prelim Quizzes) + 
+(0.4 * Attendance)
+prelimQuizzes = (0.24 * pvmPercentage) 
++ (0.31 * javaBasicsPercentage) 
++ (0.2 * introToJSPercentage) + (0.32 * 100);
+Attendance = 100 - (10 * Lecture Absences)
+
+prelimQuizzes = (0.24 * pvmPercentage) + 
+(0.32 * javaBasicsPercentage)
+ + (0.22 * introToJSPercentage) + (0.32 * 100)
+
+Lab Prelim Grade = (0.6 * Prelim Exam Lab) + 
+(0.4 * Prelim Class Standing Lab)
+Prelim Exam Lab = (0.2 * Java 1) + (0.3 * Java 2) + 
+(0.2 * JS 1) + (0.3 * JS 2)
+Prelim Class Standing Lab = (0.6 * Lab Work) + 
+(0.4 * Attendance)
+Lab Work = (MP1 + MP2 + MP3 + MP3 (Docu)) / 4
+Attendance = 100 - (10 * Lab Absences)
+            </pre>
+        </div>
+        <div class="book-container">
+            <div class="page">
+                <h3>Lecture Prelim Grade</h3>
+
+                <label>Prelim Exam Score:</label>
+                <input type="number" id="prelimExamLecture" min="0" max="100">
+                <span class="error-message" id="errorPrelimExamLecture">Score must be between 0 and 100</span>
+
+                <label>Essay Score:</label>
+                <input type="number" id="essay" min="0" max="100">
+                <span class="error-message" id="errorEssay">Score must be between 0 and 100</span>
+                
+                <label>PVM Score:</label>
+                <input type="number" id="pvm" min="0" max="60">
+                <span class="error-message" id="errorPVM">Score must be between 0 and 60</span>
+                
+                <label>Java Basics Score:</label>
+                <input type="number" id="javaBasics" min="0" max="40">
+                <span class="error-message" id="errorJavaBasics">Score must be between 0 and 40</span>
+                
+                <label>Intro to JS Score:</label>
+                <input type="number" id="introToJS" min="0" max="40">
+                <span class="error-message" id="errorIntroToJS">Score must be between 0 and 40</span>
+                
+               
+                
+                <h3>Lecture Absences</h3>
+                <div id="lectureAbsences">
+                    <div class="absence">
+                        <input type="checkbox" id="lectureAbsence1">
+                        <label for="lectureAbsence1">Absence 1</label>
+                        <input type="text" placeholder="Date (01/21/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="lectureAbsence2">
+                        <label for="lectureAbsence2">Absence 2</label>
+                        <input type="text" placeholder="Date (01/28/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="lectureAbsence3">
+                        <label for="lectureAbsence3">Absence 3</label>
+                        <input type="text" placeholder="Date (02/04/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="lectureAbsence4">
+                        <label for="lectureAbsence4">Absence 4</label>
+                        <input type="text" placeholder="Date (02/11/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="lectureAbsence5">
+                        <label for="lectureAbsence5">Absence 5</label>
+                        <input type="text" placeholder="Date (02/18/2024)">
+                    </div>
+                </div>
+                
+                <button onclick="calculateLectureGrade()">Calculate Lecture Grade</button>
+                <button onclick="loadCSV()">Load CSV</button>
+                <div id="resultLecture" class="result"></div>
+            </div>
+            <div class="page">
+                <h3>Laboratory Prelim Grade</h3>
+
+                <label>MP 1:</label>
+                <input type="number" id="mp1" min="0" max="100">
+                <span class="error-message" id="errorMP1">Score must be between 0 and 100</span>
+                
+                <label>MP 2:</label>
+                <input type="number" id="mp2" min="0" max="100">
+                <span class="error-message" id="errorMP2">Score must be between 0 and 100</span>
+                
+                <label>MP 3:</label>
+                <input type="number" id="mp3" min="0" max="100">
+                <span class="error-message" id="errorMP3">Score must be between 0 and 100</span>
+
+                <label>MP 3(Docu):</label>
+                <input type="number" id="mp3Docu" min="0" max="100">
+                <span class="error-message" id="errorMP3Docu">Score must be between 0 and 100</span>
+
+                <label>Java 1:</label>
+                <input type="number" id="java1" min="0" max="100">
+                <span class="error-message" id="errorJava1">Score must be between 0 and 100</span>
+                
+                <label>Java 2:</label>
+                <input type="number" id="java2" min="0" max="100">
+                <span class="error-message" id="errorJava2">Score must be between 0 and 100</span>
+                
+                <label>JS 1:</label>
+                <input type="number" id="js1" min="0" max="100">
+                <span class="error-message" id="errorJS1">Score must be between 0 and 100</span>
+                
+                <label>JS 2:</label>
+                <input type="number" id="js2" min="0" max="100">
+                <span class="error-message" id="errorJS2">Score must be between 0 and 100</span>
+                
+               
+                
+                <h3>Lab Absences</h3>
+                <div id="labAbsences">
+                    <div class="absence">
+                        <input type="checkbox" id="labAbsence1">
+                        <label for="labAbsence1">Absence 1</label>
+                        <input type="text" placeholder="Date (01/21/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="labAbsence2">
+                        <label for="labAbsence2">Absence 2</label>
+                        <input type="text" placeholder="Date (01/28/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="labAbsence3">
+                        <label for="labAbsence3">Absence 3</label>
+                        <input type="text" placeholder="Date (02/04/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="labAbsence4">
+                        <label for="labAbsence4">Absence 4</label>
+                        <input type="text" placeholder="Date (02/11/2025)">
+                    </div>
+                    <div class="absence">
+                        <input type="checkbox" id="labAbsence5">
+                        <label for="labAbsence5">Absence 5</label>
+                        <input type="text" placeholder="Date (02/18/2024)">
+                    </div>
+                </div>
+                
+                <button onclick="calculateLabGrade()">Calculate Lab Grade</button>
+                <button onclick="loadCSV()">Load CSV</button>
+                <div id="resultLab" class="result"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Add event listeners to enforce input limits
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lecture inputs
+            setupInputValidation("prelimExamLecture", 0, 100);
+            setupInputValidation("essay", 0, 100);
+            setupInputValidation("pvm", 0, 60);
+            setupInputValidation("javaBasics", 0, 40);
+            setupInputValidation("introToJS", 0, 40);
+            
+            // Lab inputs
+            setupInputValidation("mp1", 0, 100);
+            setupInputValidation("mp2", 0, 100);
+            setupInputValidation("mp3", 0, 100);
+            setupInputValidation("mp3Docu", 0, 100);
+            setupInputValidation("java1", 0, 100);
+            setupInputValidation("java2", 0, 100);
+            setupInputValidation("js1", 0, 100);
+            setupInputValidation("js2", 0, 100);
+        });
+        
+        function setupInputValidation(inputId, min, max) {
+            const input = document.getElementById(inputId);
+            const errorId = "error" + inputId.charAt(0).toUpperCase() + inputId.slice(1);
+            const errorElement = document.getElementById(errorId);
+            
+            input.addEventListener('input', function() {
+                const value = parseFloat(this.value);
+                if (this.value === "") {
+                    // Empty is allowed
+                    errorElement.style.display = 'none';
+                } else if (isNaN(value) || value < min || value > max) {
+                    errorElement.style.display = 'inline';
+                    errorElement.textContent = `Score must be between ${min} and ${max}`;
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            });
+        }
+
+        function calculateLectureGrade() {
+            let prelimExamLecture = parseFloat(document.getElementById("prelimExamLecture").value) || 0;
+            let essay = parseFloat(document.getElementById("essay").value) || 0;
+            let pvm = parseFloat(document.getElementById("pvm").value) || 0;
+            let javaBasics = parseFloat(document.getElementById("javaBasics").value) || 0;
+            let introToJS = parseFloat(document.getElementById("introToJS").value) || 0;
+            let lectureAbsences = getAbsencesCount('lectureAbsences');
+
+            // Validate inputs
+            if (!validateInputs(prelimExamLecture, essay, pvm, javaBasics, introToJS)) {
+                document.getElementById("resultLecture").innerHTML = "Please correct the errors in your inputs.";
+                return;
+            }
+
+            // Check for absences
+            if (lectureAbsences >= 4) {
+                document.getElementById('resultLecture').innerHTML = "Failed due to the amount of absences.";
+                return;
+            }
+                
+            // Convert scores to a 100-point scale
+            let pvmScore = (pvm / 60) * 100;
+            let javaBasicsScore = (javaBasics / 40) * 100;
+            let introToJSScore = (introToJS / 40) * 100;
+
+            // Calculate prelim quizzes - using both formulas combined
+            let prelimQuizzes = (0.24 * pvmScore) + (0.31 * javaBasicsScore) + (0.2 * introToJSScore) + (0.32 * 100);
+            
+            // Calculate attendance
+            let lectureAttendance = Math.max(0, 100 - (lectureAbsences * 10));
+            
+            // Fixed the formula from 0.64 to 0.6
+            let prelimClassStandingLecture = (0.6 * prelimQuizzes) + (0.4 * lectureAttendance);
+            let lecturePrelimGrade = (0.6 * prelimExamLecture) + (0.4 * prelimClassStandingLecture);
+            
+            // Add feedback based on the grade
+            let feedback = getFeedback(lecturePrelimGrade);
+            document.getElementById("resultLecture").innerHTML = 
+                `<p>Lecture Prelim Grade: ${lecturePrelimGrade.toFixed(2)}</p>
+                 <p>Feedback: ${feedback}</p>`;
+        }
+
+        function calculateLabGrade() {
+            let java1 = parseFloat(document.getElementById("java1").value) || 0;
+            let java2 = parseFloat(document.getElementById("java2").value) || 0;
+            let js1 = parseFloat(document.getElementById("js1").value) || 0;
+            let js2 = parseFloat(document.getElementById("js2").value) || 0;
+            let mp1 = parseFloat(document.getElementById("mp1").value) || 0;
+            let mp2 = parseFloat(document.getElementById("mp2").value) || 0;
+            let mp3 = parseFloat(document.getElementById("mp3").value) || 0;
+            let mp3Docu = parseFloat(document.getElementById("mp3Docu").value) || 0;
+            let labAbsences = getAbsencesCount('labAbsences');
+
+            // Validate inputs
+            if (!validateLabInputs(java1, java2, js1, js2, mp1, mp2, mp3, mp3Docu)) {
+                document.getElementById("resultLab").innerHTML = "Please correct the errors in your inputs.";
+                return;
+            }
+
+            // Check for absences
+            if (labAbsences >= 4) {
+                document.getElementById('resultLab').innerHTML = "Failed due to the amount of absences.";
+                return;
+            }
+
+            // Calculate prelim exam lab
+            let prelimExamLab = (0.2 * java1) + (0.3 * java2) + (0.2 * js1) + (0.3 * js2);
+            let labWork = (mp1 + mp2 + mp3 + mp3Docu) / 4;
+            let labAttendance = Math.max(0, 100 - (labAbsences * 10));
+            let prelimClassStandingLab = (0.6 * labWork) + (0.4 * labAttendance);
+            let labPrelimGrade = (0.6 * prelimExamLab) + (0.4 * prelimClassStandingLab);
+
+            // Add feedback based on the grade
+            let feedback = getFeedback(labPrelimGrade);
+            document.getElementById("resultLab").innerHTML = 
+                `<p>Lab Prelim Grade: ${labPrelimGrade.toFixed(2)}</p>
+                 <p>Feedback: ${feedback}</p>`;
+        }
+
+        function getAbsencesCount(absencesId) {
+            const absences = document.querySelectorAll(`#${absencesId} .absence input[type="checkbox"]`);
+            let count = 0;
+            absences.forEach(checkbox => {
+                if (checkbox.checked) {
+                    count++;
+                }
+            });
+            return count;
+        }
+
+        function loadCSV() {
+            const name = document.getElementById("studentName").value;
+            if (!name) {
+                alert("Please enter a name before loading the CSV.");
+                return;
+            }
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const text = event.target.result;
+                    parseCSV(text, name);
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        function validateInputs(prelimExamLecture, essay, pvm, javaBasics, introToJS) {
+            let isValid = true;
+            
+            if (prelimExamLecture < 0 || prelimExamLecture > 100) {
+                document.getElementById('errorPrelimExamLecture').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorPrelimExamLecture').style.display = 'none';
+            }
+            
+            if (essay < 0 || essay > 100) {
+                document.getElementById('errorEssay').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorEssay').style.display = 'none';
+            }
+            
+            if (pvm < 0 || pvm > 60) {
+                document.getElementById('errorPVM').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorPVM').style.display = 'none';
+            }
+            
+            if (javaBasics < 0 || javaBasics > 40) {
+                document.getElementById('errorJavaBasics').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorJavaBasics').style.display = 'none';
+            }
+            
+            if (introToJS < 0 || introToJS > 40) {
+                document.getElementById('errorIntroToJS').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorIntroToJS').style.display = 'none';
+            }
+            
+            return isValid;
+        }
+
+        function validateLabInputs(java1, java2, js1, js2, mp1, mp2, mp3, mp3Docu) {
+            let isValid = true;
+            
+            if (java1 < 0 || java1 > 100) {
+                document.getElementById('errorJava1').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorJava1').style.display = 'none';
+            }
+            
+            if (java2 < 0 || java2 > 100) {
+                document.getElementById('errorJava2').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorJava2').style.display = 'none';
+            }
+            
+            if (js1 < 0 || js1 > 100) {
+                document.getElementById('errorJS1').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorJS1').style.display = 'none';
+            }
+            
+            if (js2 < 0 || js2 > 100) {
+                document.getElementById('errorJS2').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorJS2').style.display = 'none';
+            }
+            
+            if (mp1 < 0 || mp1 > 100) {
+                document.getElementById('errorMP1').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorMP1').style.display = 'none';
+            }
+            
+            if (mp2 < 0 || mp2 > 100) {
+                document.getElementById('errorMP2').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorMP2').style.display = 'none';
+            }
+            
+            if (mp3 < 0 || mp3 > 100) {
+                document.getElementById('errorMP3').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorMP3').style.display = 'none';
+            }
+            
+            if (mp3Docu < 0 || mp3Docu > 100) {
+                document.getElementById('errorMP3Docu').style.display = 'inline';
+                isValid = false;
+            } else {
+                document.getElementById('errorMP3Docu').style.display = 'none';
+            }
+            
+            return isValid;
+        }
+
+        function getFeedback(grade) {
+            if (grade >= 90) {
+                return "Excellent!";
+            } else if (grade >= 80) {
+                return "Very Good!";
+            } else if (grade >= 75) {
+                return "Good!";
+            } else if (grade >= 60) {
+                return "Needs Improvement.";
+            } else {
+                return "Failed. Please review your work.";
+            }
+        }
+
+        function parseCSV(data, name) {
+            const lines = data.split('\n');
+            let found = false;
+            for (let i = 1; i < lines.length; i++) { // Start from 1 to skip header
+                const row = lines[i].split(',');
+                if (row[0] === name) { // Assuming the first column is the name
+                    document.getElementById("prelimExamLecture").value = row[1] || ''; // Prelim Exam Score
+                    document.getElementById("essay").value = row[2] || ''; // Essay Score
+                    document.getElementById("pvm").value = row[3] || ''; // PVM Score
+                    document.getElementById("javaBasics").value = row[4] || ''; // Java Basics Score
+                    document.getElementById("introToJS").value = row[5] || ''; // Intro to JS Score
+                    
+
+                    // Assuming the lab scores are in the CSV as well
+                    document.getElementById("java1").value = row[6] || ''; // Java 1 Score
+                    document.getElementById("java2").value = row[7] || ''; // Java 2 Score
+                    document.getElementById("js1").value = row[8] || ''; // JS 1 Score
+                    document.getElementById("js2").value = row[9] || ''; // JS 2 Score
+                    document.getElementById("mp1").value = row[10] || ''; // MP 1 Score
+                    document.getElementById("mp2").value = row[11] || ''; // MP 2 Score
+                    document.getElementById("mp3").value = row[12] || ''; // MP 3 Score
+                    document.getElementById("mp3Docu").value = row[13] || ''; // MP 3 (Docu) Score
+
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                alert("No grades found for the specified name.");
+            }
+        }
+    </script>
+</body>
+</html>
