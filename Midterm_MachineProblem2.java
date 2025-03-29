@@ -22,6 +22,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import org.jfree.ui.RectangleEdge;
+// Add these imports for loading animation
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Timer;
+import javax.swing.SwingWorker;
 
 public class MM2 extends JFrame {
     private JButton loadButton, exportButton;
@@ -31,6 +41,13 @@ public class MM2 extends JFrame {
     private List<GameData> gameDataList;
     private Map<String, Double> genreEarningsMap;
     private double totalEarnings;
+    
+    // Add these variables for loading animation
+    private JPanel loadingOverlay;
+    private Timer animationTimer;
+    private int animationAngle = 0;
+    private boolean isProcessing = false;
+    private JLabel statusLabel;
     
     // Define modern color scheme
     private static final Color PRIMARY_COLOR = new Color(42, 54, 88); // Dark blue
@@ -179,11 +196,14 @@ public class MM2 extends JFrame {
         statusBar.setBackground(new Color(230, 230, 230));
         statusBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         
-        JLabel statusLabel = new JLabel("Ready to load data");
+        statusLabel = new JLabel("Ready to load data");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         statusBar.add(statusLabel, BorderLayout.WEST);
         
         mainPanel.add(statusBar, BorderLayout.SOUTH);
+
+        // Initialize loading animation
+        initLoadingAnimation();
 
         // Setup event handlers
         setupEventHandlers();
@@ -194,6 +214,86 @@ public class MM2 extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+    
+    // Add loading animation methods
+    private JPanel createLoadingOverlay() {
+        return new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Semi-transparent background
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                g2d.setColor(new Color(240, 240, 240));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                
+                // Draw loading spinner
+                int centerX = getWidth() / 2;
+                int centerY = getHeight() / 2;
+                int radius = 30;
+                
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                g2d.setColor(ACCENT_COLOR);
+                g2d.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                
+                g2d.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 
+                            animationAngle, 270);
+                
+                // Draw text below spinner
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                g2d.setColor(TEXT_COLOR);
+                
+                String message = "Processing...";
+                int textWidth = g2d.getFontMetrics().stringWidth(message);
+                g2d.drawString(message, centerX - textWidth / 2, centerY + radius + 30);
+                
+                g2d.dispose();
+            }
+        };
+    }
+
+    private void initLoadingAnimation() {
+        loadingOverlay = createLoadingOverlay();
+        loadingOverlay.setOpaque(false);
+        loadingOverlay.setVisible(false);
+        
+        // Add overlay as glass pane to show above other components
+        setGlassPane(loadingOverlay);
+        
+        // Create animation timer
+        animationTimer = new Timer(50, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                animationAngle = (animationAngle + 10) % 360;
+                loadingOverlay.repaint();
+            }
+        });
+    }
+
+    // Method to show the loading overlay
+    public void showProcessingAnimation() {
+        if (!isProcessing) {
+            isProcessing = true;
+            loadingOverlay.setVisible(true);
+            animationTimer.start();
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            statusLabel.setText("Processing...");
+        }
+    }
+
+    // Method to hide the loading overlay
+    public void hideProcessingAnimation() {
+        if (isProcessing) {
+            animationTimer.stop();
+            loadingOverlay.setVisible(false);
+            isProcessing = false;
+            setCursor(Cursor.getDefaultCursor());
+            statusLabel.setText("Ready");
+        }
     }
     
     private JButton createStyledButton(String text, ImageIcon icon) {
@@ -269,8 +369,26 @@ public class MM2 extends JFrame {
         
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            processCSVFile(selectedFile);
+            final File selectedFile = fileChooser.getSelectedFile();
+            
+            // Show loading animation
+            showProcessingAnimation();
+            
+            // Process file in background thread to keep UI responsive
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    processCSVFile(selectedFile);
+                    return null;
+                }
+                
+                @Override
+                protected void done() {
+                    // Hide loading animation when processing is complete
+                    hideProcessingAnimation();
+                }
+            };
+            worker.execute();
         }
     }
 
@@ -313,6 +431,13 @@ public class MM2 extends JFrame {
                         }
                     }
                 }
+            }
+            
+            // Sleep a bit to simulate longer processing for larger files
+            try {
+                Thread.sleep(800);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
             
             updateUI();
@@ -512,137 +637,236 @@ public class MM2 extends JFrame {
     }
     
     private void updateCharts() {
-        chartsPanel.removeAll();
-        
-        // Create genre earnings pie chart with modern styling
-        DefaultPieDataset genreDataset = new DefaultPieDataset();
-        
-        // Sort genres by earnings for better visualization
-        List<Map.Entry<String, Double>> sortedGenres = new ArrayList<>(genreEarningsMap.entrySet());
-        sortedGenres.sort(Map.Entry.<String, Double>comparingByValue().reversed());
-        
-        for (Map.Entry<String, Double> entry : sortedGenres) {
-            genreDataset.setValue(entry.getKey(), entry.getValue());
-        }
-        
-        JFreeChart genreChart = ChartFactory.createPieChart(
-            "Genre Earnings", genreDataset, true, true, false
-        );
-        
-        // Apply modern styling to genre chart
-        styleChart(genreChart, "Top Genres by Revenue");
-        
-        // Create earnings distribution donut chart
-        DefaultPieDataset distributionDataset = new DefaultPieDataset();
-        for (Map.Entry<String, Double> entry : sortedGenres) {
-            double percentage = (entry.getValue() / totalEarnings) * 100;
-            distributionDataset.setValue(entry.getKey() + " (" + String.format("%.1f", percentage) + "%)", percentage);
-        }
-        
-        // Create and style the donut chart
-        JFreeChart donutChart = createDonutChart("Revenue Distribution", distributionDataset);
-        styleChart(donutChart, "Revenue Distribution by Genre");
-        
-        // Create chart panels with card-like styling
-        ChartPanel genreChartPanel = createChartPanel(genreChart);
-        ChartPanel donutChartPanel = createChartPanel(donutChart);
-        
-        chartsPanel.add(genreChartPanel);
-        chartsPanel.add(donutChartPanel);
-        
-        chartsPanel.revalidate();
-        chartsPanel.repaint();
-    }
+    chartsPanel.removeAll();
     
-    private JFreeChart createDonutChart(String title, DefaultPieDataset dataset) {
-        JFreeChart chart = ChartFactory.createRingChart(
-            title, dataset, true, true, false
-        );
+    // Create genre earnings pie chart with modern styling
+    DefaultPieDataset genreDataset = new DefaultPieDataset();
+    
+    // Sort genres by earnings for better visualization
+    List<Map.Entry<String, Double>> sortedGenres = new ArrayList<>(genreEarningsMap.entrySet());
+    sortedGenres.sort(Map.Entry.<String, Double>comparingByValue().reversed());
+    
+    // Create an empty dataset first for animation
+    final DefaultPieDataset animatedGenreDataset = new DefaultPieDataset();
+    
+    // Create the chart with empty dataset
+    final JFreeChart genreChart = ChartFactory.createPieChart(
+        "Genre Earnings", animatedGenreDataset, true, true, false
+    );
+    
+    // Apply modern styling to genre chart
+    styleChart(genreChart, "Top Genres by Revenue");
+    
+    // Create earnings distribution donut chart with empty dataset
+    final DefaultPieDataset animatedDistributionDataset = new DefaultPieDataset();
+    
+    // Create and style the donut chart
+    final JFreeChart donutChart = createDonutChart("Revenue Distribution", animatedDistributionDataset);
+    styleChart(donutChart, "Revenue Distribution by Genre");
+    
+    // Create chart panels with card-like styling
+    final ChartPanel genreChartPanel = createChartPanel(genreChart);
+    final ChartPanel donutChartPanel = createChartPanel(donutChart);
+    
+    chartsPanel.add(genreChartPanel);
+    chartsPanel.add(donutChartPanel);
+    
+    chartsPanel.revalidate();
+    chartsPanel.repaint();
+    
+    // Start animations after panels are visible
+    SwingUtilities.invokeLater(() -> {
+        // Animation timer for pie chart
+        final Timer pieChartTimer = new Timer(1000, null);
+        final int[] pieCount = {0};
         
-        // Get the plot and customize it
-        RingPlot plot = (RingPlot) chart.getPlot();
-        plot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
-        plot.setLabelBackgroundPaint(new Color(255, 255, 255, 220));
-        plot.setLabelOutlinePaint(null);
-        plot.setShadowPaint(null);
-        plot.setSectionDepth(0.35); // Adjust thickness of the ring
-        plot.setCircular(true);
-        plot.setSectionOutlinesVisible(true);
-        plot.setSectionOutlinePaint(Color.WHITE);
-        plot.setSectionOutlineStroke(new BasicStroke(2.0f));
-        plot.setSeparatorsVisible(true);
+        pieChartTimer.addActionListener(e -> {
+            if (pieCount[0] < sortedGenres.size()) {
+                Map.Entry<String, Double> entry = sortedGenres.get(pieCount[0]);
+                animatedGenreDataset.setValue(entry.getKey(), entry.getValue());
+                pieCount[0]++;
+                
+                // Style the newly added section
+                PiePlot piePlot = (PiePlot) genreChart.getPlot();
+                piePlot.setSectionPaint(entry.getKey(), CHART_COLORS[(pieCount[0] - 1) % CHART_COLORS.length]);
+            } else {
+                pieChartTimer.stop();
+            }
+        });
+        
+        // Animation timer for donut chart
+        final Timer donutChartTimer = new Timer(1000, null);
+        final int[] donutCount = {0};
+        
+        donutChartTimer.addActionListener(e -> {
+            if (donutCount[0] < sortedGenres.size()) {
+                Map.Entry<String, Double> entry = sortedGenres.get(donutCount[0]);
+                double percentage = (entry.getValue() / totalEarnings) * 100;
+                animatedDistributionDataset.setValue(
+                    entry.getKey() + " (" + String.format("%.1f", percentage) + "%)", 
+                    percentage
+                );
+                donutCount[0]++;
+                
+                // Style the newly added section
+                RingPlot ringPlot = (RingPlot) donutChart.getPlot();
+                ringPlot.setSectionPaint(
+                entry.getKey() + " (" + String.format("%.1f", percentage) + "%)", 
+                    CHART_COLORS[(donutCount[0] - 1) % CHART_COLORS.length]
+                   );
+            } else {
+                donutChartTimer.stop();
+            }
+        });
+        
+        // Start the animations with a slight delay
+        Timer startDelayTimer = new Timer(3500, e -> {
+            pieChartTimer.start();
+            // Start donut chart animation after pie chart is halfway done
+            Timer donutDelayTimer = new Timer((sortedGenres.size() * 90) / 2, event -> {
+                donutChartTimer.start();
+                ((Timer) event.getSource()).stop();
+            });
+            donutDelayTimer.setRepeats(false);
+            donutDelayTimer.start();
+            ((Timer) e.getSource()).stop();
+        });
+        startDelayTimer.setRepeats(false);
+        startDelayTimer.start();
+    });
+}
+    
+   private JFreeChart createDonutChart(String title, DefaultPieDataset dataset) {
+    JFreeChart chart = ChartFactory.createRingChart(
+        title, dataset, true, true, false
+    );
+    
+    // Get the plot and customize it
+    RingPlot plot = (RingPlot) chart.getPlot();
+    plot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
+    plot.setLabelBackgroundPaint(new Color(255, 255, 255, 220));
+    plot.setLabelOutlinePaint(null);
+    plot.setShadowPaint(null);
+    plot.setSectionDepth(0.35); // Adjust thickness of the ring
+    plot.setCircular(true);
+    plot.setSectionOutlinesVisible(true);
+    plot.setSectionOutlinePaint(Color.WHITE);
+    plot.setSectionOutlineStroke(new BasicStroke(2.0f));
+    plot.setSeparatorsVisible(true);
+    
+    // Add a text in the center showing total with animation
+    DecimalFormat formatter = new DecimalFormat("$#,##0");
+    String centerText = "Total\n" + formatter.format(totalEarnings);
+    final TextTitle subtitle = new TextTitle("");
+    subtitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+    subtitle.setPaint(TEXT_COLOR);
+    subtitle.setPosition(RectangleEdge.BOTTOM);
+    chart.addSubtitle(subtitle);
+    
+    // Animate the text after a delay
+    Timer textAnimTimer = new Timer(1200, e -> {
+        final StringBuilder animText = new StringBuilder();
+        final String[] lines = centerText.split("\n");
+        final int[] charCount = {0};
+        final int totalChars = centerText.length();
+        
+        Timer charTimer = new Timer(40, event -> {
+            if (charCount[0] < totalChars) {
+                int lineIdx = 0;
+                int pos = charCount[0];
+                
+                // Find which line we're on
+                while (lineIdx < lines.length - 1 && pos >= lines[lineIdx].length() + 1) {
+                    pos -= lines[lineIdx].length() + 1; // +1 for the newline
+                    lineIdx++;
+                }
+                
+                if (lineIdx < lines.length) {
+                    // Build the text so far
+                    animText.setLength(0);
+                    for (int i = 0; i < lineIdx; i++) {
+                        animText.append(lines[i]).append("\n");
+                    }
+                    
+                    // Add the current line up to current position
+                    if (pos < lines[lineIdx].length()) {
+                        animText.append(lines[lineIdx].substring(0, pos + 1));
+                    } else {
+                        animText.append(lines[lineIdx]);
+                        if (lineIdx < lines.length - 1) {
+                            animText.append("\n");
+                        }
+                    }
+                }
+                
+                subtitle.setText(animText.toString());
+                chart.fireChartChanged();
+                charCount[0]++;
+            } else {
+                ((Timer) event.getSource()).stop();
+            }
+        });
+        charTimer.start();
+        ((Timer) e.getSource()).stop();
+    });
+    textAnimTimer.setRepeats(false);
+    textAnimTimer.start();
+    
+    return chart;
+}
+    
+    private void styleChart(JFreeChart chart, String title) {
+    chart.setBackgroundPaint(Color.WHITE);
+    
+    // Set title
+    TextTitle textTitle = new TextTitle(title);
+    textTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    textTitle.setPaint(TEXT_COLOR);
+    chart.setTitle(textTitle);
+    
+    // Style the plot
+    Plot plot = chart.getPlot();
+    plot.setBackgroundPaint(Color.WHITE);
+    plot.setOutlineVisible(false);
+    
+    // If it's a pie plot, apply additional styling
+    if (plot instanceof PiePlot) {
+        PiePlot piePlot = (PiePlot) plot;
+        piePlot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
+        piePlot.setLabelBackgroundPaint(new Color(255, 255, 255, 220));
+        piePlot.setLabelOutlinePaint(null);
+        piePlot.setShadowPaint(null);
+        piePlot.setCircular(true);
+        piePlot.setSectionOutlinesVisible(true);
+        piePlot.setSectionOutlinePaint(Color.WHITE);
+        piePlot.setSectionOutlineStroke(new BasicStroke(2.0f));
+        piePlot.setLabelShadowPaint(null);
         
         // Set colors for the sections
         int colorIndex = 0;
-        for (int i = 0; i < dataset.getItemCount(); i++) {
-            plot.setSectionPaint(dataset.getKey(i), CHART_COLORS[colorIndex % CHART_COLORS.length]);
+        for (int i = 0; i < ((DefaultPieDataset)piePlot.getDataset()).getItemCount(); i++) {
+            piePlot.setSectionPaint(((DefaultPieDataset)piePlot.getDataset()).getKey(i), 
+                    CHART_COLORS[colorIndex % CHART_COLORS.length]);
             colorIndex++;
         }
-        
-        // Add a text in the center showing total
-        DecimalFormat formatter = new DecimalFormat("$#,##0");
-        String centerText = "Total\n" + formatter.format(totalEarnings);
-        TextTitle subtitle = new TextTitle(centerText);
-        subtitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        subtitle.setPaint(TEXT_COLOR);
-        subtitle.setPosition(RectangleEdge.BOTTOM);
-        chart.addSubtitle(subtitle);
-        
-        return chart;
     }
     
-    private void styleChart(JFreeChart chart, String title) {
-        // Set custom title
-        chart.setTitle(new TextTitle(title, new Font("Segoe UI", Font.BOLD, 18)));
-        
-        // Set background colors
-        chart.setBackgroundPaint(Color.WHITE);
-        
-        Plot plot = chart.getPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setOutlinePaint(null); // Remove outline
-        
-        // For pie charts specifically
-        if (plot instanceof PiePlot) {
-            PiePlot piePlot = (PiePlot) plot;
-            
-            // Set custom section colors
-            int colorIndex = 0;
-            for (int i = 0; i < piePlot.getDataset().getItemCount(); i++) {
-                piePlot.setSectionPaint(piePlot.getDataset().getKey(i), CHART_COLORS[colorIndex % CHART_COLORS.length]);
-                colorIndex++;
-            }
-            
-            // Style the labels
-            piePlot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
-            piePlot.setLabelBackgroundPaint(new Color(255, 255, 255, 220));
-            piePlot.setLabelOutlinePaint(null);
-            piePlot.setShadowPaint(null); // Remove shadow
-            
-            // Add some space between sections
-            piePlot.setSectionOutlinesVisible(true);
-            piePlot.setSectionOutlinePaint(Color.WHITE);
-            piePlot.setSectionOutlineStroke(new BasicStroke(2.0f));
-        }
-        
-        // Style the legend
-        chart.getLegend().setFrame(org.jfree.chart.block.BlockBorder.NONE);
-        chart.getLegend().setBackgroundPaint(Color.WHITE);
-        chart.getLegend().setItemFont(new Font("Segoe UI", Font.PLAIN, 12));
-    }
-    
-    private ChartPanel createChartPanel(JFreeChart chart) {
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setBackground(Color.WHITE);
-        chartPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-        chartPanel.setPreferredSize(new Dimension(400, 300));
-        return chartPanel;
-    }
-    
-    private void exportData() {
+    // Style the legend
+    chart.getLegend().setBackgroundPaint(Color.WHITE);
+    chart.getLegend().setItemFont(new Font("Segoe UI", Font.PLAIN, 12));
+}
+
+private ChartPanel createChartPanel(JFreeChart chart) {
+    ChartPanel panel = new ChartPanel(chart);
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+        BorderFactory.createEmptyBorder(15, 15, 15, 15)
+    ));
+    return panel;
+}
+
+ private void exportData() {
         if (gameDataList == null || gameDataList.isEmpty()) {
             showNotification("Please load data first before exporting.", "No Data", JOptionPane.WARNING_MESSAGE);
             return;
@@ -695,42 +919,60 @@ public class MM2 extends JFrame {
         }
     }
 
-    // Class to represent game data
-    private static class GameData {
-        private String name;
-        private String genre;
-        private double earnings;
-        
-        public GameData(String name, String genre, double earnings) {
-            this.name = name;
-            this.genre = genre;
-            this.earnings = earnings;
+private String escapeCSV(String value) {
+    if (value == null) return "";
+    
+    if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+        // Escape quotes by doubling them and wrap in quotes
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+    
+    return value;
+}
+
+public static void main(String[] args) {
+    try {
+        // Set the Nimbus look and feel for a modern appearance
+        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            if ("Nimbus".equals(info.getName())) {
+                UIManager.setLookAndFeel(info.getClassName());
+                break;
+            }
         }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public String getGenre() {
-            return genre;
-        }
-        
-        public double getEarnings() {
-            return earnings;
+    } catch (Exception e) {
+        // If Nimbus is not available, use the default look and feel
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ex) {
+            // Use the default look and feel
         }
     }
     
-    public static void main(String[] args) {
-        // Set look and feel to the system look and feel
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        // Create and display the application
-        SwingUtilities.invokeLater(() -> {
-            new MM2();
-        });
+    SwingUtilities.invokeLater(() -> new MM2());
+}
+
+// Class to store game data
+private static class GameData {
+    private String name;
+    private String genre;
+    private double earnings;
+    
+    public GameData(String name, String genre, double earnings) {
+        this.name = name;
+        this.genre = genre;
+        this.earnings = earnings;
     }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public String getGenre() {
+        return genre;
+    }
+    
+    public double getEarnings() {
+        return earnings;
+    }
+}
 }
