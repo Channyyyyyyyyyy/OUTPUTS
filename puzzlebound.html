@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuzzleBound</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #121212;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #4d9bff;
+            margin: 0;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(77, 155, 255, 0.7);
+        }
+        .game-container {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            flex-direction: row !important;
+        }
+        canvas {
+            border: 2px solid #4d9bff;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(77, 155, 255, 0.3);
+            background-color: #1a1a1a;
+        }
+        .side-panel {
+            display: flex;
+            flex-direction: column !important;
+            gap: 15px;
+            width: 180px;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+        }
+        .info-box {
+            background-color: #2a2a2a;
+            border: 1px solid #4d9bff;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(77, 155, 255, 0.2);
+        }
+        .next-piece {
+            height: 150px;
+            position: relative;
+        }
+        .next-piece canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #4d9bff;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .info-box p {
+            margin: 5px 0;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        .controls-box {
+            margin-top: 15px;
+        }
+        .controls-box p {
+            margin: 5px 0;
+            font-size: 0.85rem;
+        }
+        .power-up {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ffcc00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: black;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+            animation: pulsate 1.5s infinite alternate;
+        }
+        @keyframes pulsate {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
+        .game-over h2 {
+            color: #ff4d4d;
+            margin-top: 0;
+        }
+        .game-over button {
+            background-color: #4d9bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .game-over button:hover {
+            background-color: #3a7fd9;
+        }
+        .active-power-ups {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .active-power-up {
+            background-color: rgba(255, 204, 0, 0.3);
+            border: 1px solid #ffcc00;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .active-power-up-timer {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .power-up-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 204, 0, 0.8);
+            color: black;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .line-pop {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            animation: pop-animation 0.5s ease-out forwards;
+        }
+        @keyframes pop-animation {
+            0% { transform: scale(0); opacity: 0.9; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        /* New styles for start screen and buttons */
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .game-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .game-btn {
+            background-color: #4d9bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 0 15px rgba(77, 155, 255, 0.5);
+        }
+        
+        .game-btn:hover {
+            background-color: #3a7fd9;
+        }
+        
+        .game-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .game-btn.pause-btn {
+            background-color: #ff8e0d;
+            box-shadow: 0 0 15px rgba(255, 142, 13, 0.5);
+        }
+        
+        .game-btn.pause-btn:hover {
+            background-color: #e07c0b;
+        }
+        
+        .start-screen .logo {
+            font-size: 3rem;
+            color: #4d9bff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(77, 155, 255, 0.8);
+            animation: pulse 1.5s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { text-shadow: 0 0 15px rgba(77, 155, 255, 0.5); }
+            100% { text-shadow: 0 0 25px rgba(77, 155, 255, 0.9); }
+        }
+        
+        /* New Leaderboard Styles */
+        .leaderboard {
+            background-color: #2a2a2a;
+            border: 1px solid #4d9bff;
+            border-radius: 5px;
+            padding: 10px;
+            width: 200px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(77, 155, 255, 0.2);
+        }
+        
+        .leaderboard h3 {
+            color: #4d9bff;
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+        
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(77, 155, 255, 0.3);
+        }
+        
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+        
+        .leaderboard-rank {
+            color: #ffcc00;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .leaderboard-name {
+            flex-grow: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .leaderboard-score {
+            font-weight: bold;
+            color: #4d9bff;
+        }
+        
+        /* High Score Input Styles */
+        .high-score-input {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 11;
+            border: 2px solid #4d9bff;
+            display: none;
+        }
+        
+        .high-score-input h2 {
+            color: #ffcc00;
+            margin-top: 0;
+        }
+        
+        .high-score-input p {
+            margin-bottom: 15px;
+        }
+        
+        .high-score-input input {
+            padding: 8px;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #4d9bff;
+            background-color: #1a1a1a;
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .high-score-input input:focus {
+            outline: none;
+            box-shadow: 0 0 5px #4d9bff;
+        }
+        
+        /* Media query for smaller screens */
+        @media (max-width: 1000px) {
+            .game-container {
+                flex-direction: column !important;
+                align-items: center;
+            }
+            .side-panel {
+                margin-top: 20px;
+                width: 300px; /* Match game width on mobile */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .next-piece {
+                grid-column: span 2;
+            }
+            .controls-box {
+                grid-column: span 2;
+            }
+            .game-buttons {
+                margin-bottom: 15px;
+            }
+            .leaderboard {
+                width: 300px;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PuzzleBound</h1>
+    </header>
+    
+    <div class="game-buttons">
+        <button id="startButton" class="game-btn">Start Game</button>
+        <button id="pauseButton" class="game-btn pause-btn">Pause</button>
+        <button id="showLeaderboardButton" class="game-btn">Leaderboard</button>
+    </div>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas" width="300" height="600"></canvas>
+        
+        <div id="startScreen" class="start-screen">
+            <div class="logo">PuzzleBound</div>
+            <button id="startScreenButton" class="game-btn">Start Game</button>
+            <div id="startLeaderboard" class="leaderboard" style="margin-top: 20px;">
+                <h3>LEADERBOARD</h3>
+                <ul class="leaderboard-list" id="startLeaderboardList">
+                    <!-- Leaderboard items will be populated here -->
+                </ul>
+            </div>
+        </div>
+        
+        <div class="side-panel">
+            <div class="info-box next-piece">
+                <h3>NEXT</h3>
+                <canvas id="nextPieceCanvas" width="120" height="120"></canvas>
+            </div>
+            
+            <div class="info-box">
+                <h3>SCORE</h3>
+                <p id="score">0</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>LEVEL</h3>
+                <p id="level">1</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>LINES</h3>
+                <p id="lines">0</p>
+            </div>
+            
+            <div class="controls-box info-box">
+                <h3>CONTROLS</h3>
+                <p>← → : Move</p>
+                <p>↑ : Rotate</p>
+                <p>↓ : Soft Drop</p>
+                <p>SPACE : Hard Drop</p>
+                <p>P : Pause</p>
+            </div>
+        </div>
+        
+        <div id="activePowerUps" class="active-power-ups"></div>
+        <div id="powerUpNotification" class="power-up-notification"></div>
+        
+        <div id="gameOver" class="game-over">
+            <h2>GAME OVER</h2>
+            <p>Your score: <span id="finalScore">0</span></p>
+            <button id="restartButton">Play Again</button>
+        </div>
+        
+        <div id="highScoreInput" class="high-score-input">
+            <h2>NEW HIGH SCORE!</h2>
+            <p>Your score: <span id="highScoreValue">0</span></p>
+            <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="10">
+            <button id="saveScoreButton" class="game-btn">Save Score</button>
+        </div>
+    </div>
+    
+    <div id="leaderboardDisplay" class="leaderboard">
+        <h3>LEADERBOARD</h3>
+        <ul class="leaderboard-list" id="leaderboardList">
+            <!-- Leaderboard items will be populated here -->
+        </ul>
+    </div>
+
+    <script>
+        // Game Constants and Variables
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        const COLORS = [
+            null,
+            '#FF0D72', // I
+            '#0DC2FF', // J
+            '#0DFF72', // L
+            '#F538FF', // O
+            '#FF8E0D', // S
+            '#FFE138', // T
+            '#3877FF'  // Z
+        ];
+
+        // Tetrimino shapes
+        const SHAPES = [
+            null,
+            [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // I
+            [[2,0,0], [2,2,2], [0,0,0]],                  // J
+            [[0,0,3], [3,3,3], [0,0,0]],                  // L
+            [[0,4,4], [0,4,4], [0,0,0]],                  // O
+            [[0,5,5], [5,5,0], [0,0,0]],                  // S
+            [[0,6,0], [6,6,6], [0,0,0]],                  // T
+            [[7,7,0], [0,7,7], [0,0,0]]                   // Z
+        ];
+
+        // Power-up types
+        const POWER_UPS = {
+            CLEAR_ROW: {
+                symbol: 'C', 
+                effect: 'Clears a row',
+                color: '#FF5733',
+                duration: null // Instant effect
+            },
+            SLOW_DOWN: {
+                symbol: 'S', 
+                effect: 'Slows down falling pieces',
+                color: '#33A1FF',
+                duration: 15000 // 15 seconds
+            },
+            MULTI_CLEAR: {
+                symbol: 'M', 
+                effect: 'Next line clear affects multiple rows',
+                color: '#33FF57',
+                duration: 30000 // 30 seconds
+            },
+            TIME_FREEZE: {
+                symbol: 'T', 
+                effect: 'Temporarily freezes piece movement',
+                color: '#A833FF',
+                duration: 5000 // 5 seconds
+            }
+        };
+
+        // Game variables
+        let canvas = document.getElementById('gameCanvas');
+        let ctx = canvas.getContext('2d');
+        let nextPieceCanvas = document.getElementById('nextPieceCanvas');
+        let nextPieceCtx = nextPieceCanvas.getContext('2d');
+        let scoreElement = document.getElementById('score');
+        let levelElement = document.getElementById('level');
+        let linesElement = document.getElementById('lines');
+        let gameOverPanel = document.getElementById('gameOver');
+        let finalScoreElement = document.getElementById('finalScore');
+        let restartButton = document.getElementById('restartButton');
+        let activePowerUpsElement = document.getElementById('activePowerUps');
+        let powerUpNotificationElement = document.getElementById('powerUpNotification');
+        let startScreenElement = document.getElementById('startScreen');
+        let startButton = document.getElementById('startButton');
+        let startScreenButton = document.getElementById('startScreenButton');
+        let pauseButton = document.getElementById('pauseButton');
+        let showLeaderboardButton = document.getElementById('showLeaderboardButton');
+        let leaderboardDisplay = document.getElementById('leaderboardDisplay');
+        let leaderboardList = document.getElementById('leaderboardList');
+        let startLeaderboardList = document.getElementById('startLeaderboardList');
+        let highScoreInput = document.getElementById('highScoreInput');
+        let highScoreValue = document.getElementById('highScoreValue');
+        let playerNameInput = document.getElementById('playerNameInput');
+        let saveScoreButton = document.getElementById('saveScoreButton');
+
+        let board = createMatrix(COLS, ROWS);
+        let score = 0;
+        let level = 1;
+        let lines = 0;
+        let dropCounter = 0;
+        let dropInterval = 1000; // Initial drop speed (ms)
+        let originalDropInterval = 1000;
+        let lastTime = 0;
+        let gameOver = false;
+        let isPaused = false;
+        let gameStarted = false;
+        let powerUpChance = 0.15; // 15% chance for power-up
+        let powerUps = [];
+        let activePowerUps = {}; // Track active power-ups with timers
+        let comboCount = 0; // Track combo counter for consecutive line clears
+        let lastClearTime = 0; // Time of last line clear for combo tracking
+        let lineClearEffects = []; // Track line clear animation effects
+        let animationId = null; // Store animation frame ID for pausing
+        let leaderboard = []; // Array to store leaderboard entries
+        let isHighScore = false; // Flag to track if current score is a high score
+
+        let player = {
+            pos: {x: 0, y: 0},
+            matrix: null,
+            next: getRandomPiece(),
+            hold: null,
+            canHold: true
+        };
+
+        // Initialize the game
+        function init() {
+    board = createMatrix(COLS, ROWS);
+    score = 0;
+    level = 1;
+    lines = 0;
+    dropInterval = 1000;
+    originalDropInterval = 1000;
+    gameOver = false;
+    isPaused = false;
+    
+    // Clear all power-ups
+    powerUps = [];
+    
+    // Clear active power-up displays
+    activePowerUpsElement.innerHTML = '';
+    
+    // Clear active power-ups
+    for (let type in activePowerUps) {
+        if (activePowerUps[type] && activePowerUps[type].element) {
+            if (activePowerUps[type].element.parentNode) {
+                activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+            }
+        }
+    }
+    activePowerUps = {};
+    
+    comboCount = 0;
+    lineClearEffects = [];
+    isHighScore = false;
+    
+    updateScore(0);
+    updateLevel(1);
+    updateLines(0);
+    
+    player.matrix = player.next;
+    player.next = getRandomPiece();
+    player.hold = null;
+    player.canHold = true;
+    playerReset();
+    
+    gameOverPanel.style.display = 'none';
+    highScoreInput.style.display = 'none';
+    
+    // Initial draw of the game board
+    draw();
+}
+
+        // Load leaderboard from localStorage
+        function loadLeaderboard() {
+            const savedLeaderboard = localStorage.getItem('puzzleBoundLeaderboard');
+            if (savedLeaderboard) {
+                leaderboard = JSON.parse(savedLeaderboard);
+            } else {
+                // Default leaderboard with placeholder entries
+                leaderboard = [
+                    { name: "TETRIS", score: 10000 },
+                    { name: "MASTER", score: 8000 },
+                    { name: "PUZZLE", score: 6000 },
+                    { name: "PLAYER", score: 4000 },
+                    { name: "NEWBIE", score: 2000 }
+                ];
+                saveLeaderboard();
+            }
+            updateLeaderboardDisplay();
+        }
+
+        // Save leaderboard to localStorage
+        function saveLeaderboard() {
+            localStorage.setItem('puzzleBoundLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        // Update the leaderboard display
+        function updateLeaderboardDisplay() {
+            // Sort leaderboard by score (highest first)
+            leaderboard.sort((a, b) => b.score - a.score);
+            
+            // Limit to top 5
+            leaderboard = leaderboard.slice(0, 5);
+            
+            // Clear existing entries
+            leaderboardList.innerHTML = '';
+            startLeaderboardList.innerHTML = '';
+            
+            // Add entries to both leaderboard displays
+            leaderboard.forEach((entry, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'leaderboard-item';
+                listItem.innerHTML = `
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-name">${entry.name}</span>
+                    <span class="leaderboard-score">${entry.score}</span>
+                `;
+                
+                // Create a clone for the start screen leaderboard
+                const startListItem = listItem.cloneNode(true);
+                
+                leaderboardList.appendChild(listItem);
+                startLeaderboardList.appendChild(startListItem);
+            });
+        }
+
+        // Check if the current score is a high score
+        function checkHighScore() {
+            if (leaderboard.length < 5 || score > leaderboard[leaderboard.length - 1].score) {
+                return true;
+            }
+            return false;
+        }
+
+        // Show high score input form
+        function showHighScoreInput() {
+            highScoreValue.textContent = score;
+            highScoreInput.style.display = 'block';
+            playerNameInput.focus();
+        }
+
+        // Save the high score
+        function saveHighScore() {
+            const playerName = playerNameInput.value.trim() || 'Player';
+            
+            // Add the new score
+            leaderboard.push({
+                name: playerName,
+                score: score
+            });
+            
+            // Sort and limit to top 5
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 5);
+            
+            // Save to localStorage
+            saveLeaderboard();
+            
+            // Update the display
+            updateLeaderboardDisplay();
+            
+            // Hide the input form
+            highScoreInput.style.display = 'none';
+            
+            // Show game over screen
+            gameOverPanel.style.display = 'block';
+        }
+
+        // Start the game
+        function startGame() {
+            if (!gameStarted || gameOver) {
+                gameStarted = true;
+                gameOver = false;
+                isPaused = false;
+                startScreenElement.style.display = 'none';
+                pauseButton.textContent = 'Pause';
+                init();
+                lastTime = performance.now();
+                cancelAnimationFrame(animationId); // Cancel any existing animation
+                update(); // Start the game loop
+            } else if (isPaused) {
+                // Resume the game if it was paused
+                isPaused = false;
+                pauseButton.textContent = 'Pause';
+                lastTime = performance.now();
+                update();
+            }
+        }
+
+        // Toggle pause state
+        function togglePause() {
+            if (!gameStarted || gameOver) return;
+            
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+            
+            if (!isPaused) {
+                lastTime = performance.now();
+                update();
+            } else {
+                // Show pause message on canvas
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.font = 'bold 30px Arial';
+                ctx.fillStyle = '#4d9bff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+                
+                ctx.font = '16px Arial';
+                ctx.fillText('Press Resume to continue', canvas.width / 2, canvas.height / 2 + 40);
+            }
+        }
+
+        // Toggle leaderboard visibility
+        function toggleLeaderboard() {
+            if (leaderboardDisplay.style.display === 'none') {
+                leaderboardDisplay.style.display = 'block';
+                updateLeaderboardDisplay();
+            } else {
+                leaderboardDisplay.style.display = 'none';
+            }
+        }
+
+        // Create a matrix (2D array)
+        function createMatrix(w, h) {
+            const matrix = [];
+            while (h--) {
+                matrix.push(new Array(w).fill(0));
+            }
+            return matrix;
+        }
+
+        // Get a random piece
+        function getRandomPiece() {
+            const pieceType = Math.floor(Math.random() * 7) + 1;
+            return SHAPES[pieceType];
+        }
+
+        // Reset player position
+        function playerReset() {
+    player.matrix = player.next;
+    player.next = getRandomPiece();
+    player.pos.y = 0;
+    player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+    player.canHold = true;
+    
+    drawNextPiece();
+    
+    // Check if game over: If the piece overlaps with existing blocks
+    if (checkCollision()) {
+        gameOver = true;
+        finalScoreElement.textContent = score;
+        
+        // Check if this is a high score
+        isHighScore = checkHighScore();
+        
+        if (isHighScore) {
+            showHighScoreInput();
+        } else {
+            gameOverPanel.style.display = 'block';
+        }
+    }
+    
+    // Randomly spawn a power-up with probability that increases with level
+    const spawnProbability = powerUpChance + (level * 0.01);
+    if (Math.random() < spawnProbability) {
+        spawnPowerUp();
+    }
+}
+
+        // Draw the next piece preview with larger size
+        function drawNextPiece() {
+            nextPieceCtx.clearRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
+            nextPieceCtx.fillStyle = '#2a2a2a';
+            nextPieceCtx.fillRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
+            
+            const matrix = player.next;
+            const blockSizeNext = 25; // Slightly smaller than main blocks but larger than before
+            const offset = {
+                x: (nextPieceCanvas.width / 2) - (matrix[0].length * blockSizeNext / 2),
+                y: (nextPieceCanvas.height / 2) - (matrix.length * blockSizeNext / 2)
+            };
+            
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        nextPieceCtx.fillStyle = COLORS[value];
+                        nextPieceCtx.fillRect(
+                            x * blockSizeNext + offset.x,
+                            y * blockSizeNext + offset.y,
+                            blockSizeNext - 1,
+                            blockSizeNext - 1
+                        );
+                        
+                        // Add highlight for 3D effect
+                        nextPieceCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        nextPieceCtx.fillRect(
+                            x * blockSizeNext + offset.x,
+                            y * blockSizeNext + offset.y,
+                            blockSizeNext - 1,
+                            3
+                        );
+                        nextPieceCtx.fillRect(
+                            x * blockSizeNext + offset.x,
+                            y * blockSizeNext + offset.y,
+                            3,
+                            blockSizeNext - 1
+                        );
+                        
+                        // Add shadow for 3D effect
+                        nextPieceCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        nextPieceCtx.fillRect(
+                            x * blockSizeNext + offset.x + blockSizeNext - 4,
+                            y * blockSizeNext + offset.y,
+                            3,
+                            blockSizeNext - 1
+                        );
+                        nextPieceCtx.fillRect(
+                            x * blockSizeNext + offset.x,
+                            y * blockSizeNext + offset.y + blockSizeNext - 4,
+                            blockSizeNext - 1,
+                            3
+                        );
+                    }
+                });
+            });
+        }
+
+        // Draw the game board
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background grid
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 0.5;
+            
+            // Draw vertical lines
+            for (let i = 0; i <= COLS; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * BLOCK_SIZE, 0);
+                ctx.lineTo(i * BLOCK_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw horizontal lines
+            for (let i = 0; i <= ROWS; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * BLOCK_SIZE);
+                ctx.lineTo(canvas.width, i * BLOCK_SIZE);
+                ctx.stroke();
+            }
+            
+            // Draw the placed blocks on the board
+            drawMatrix(board, {x: 0, y: 0});
+            
+            // Draw power-ups
+            drawPowerUps();
+            
+            // Draw the current piece
+            drawMatrix(player.matrix, player.pos);
+            
+            // Draw the ghost piece (landing preview)
+            drawGhostPiece();
+            
+            // Draw line clear effects
+            drawLineClearEffects();
+        }
+
+        // Draw a matrix on the canvas
+        function drawMatrix(matrix, offset) {
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        ctx.fillStyle = COLORS[value];
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE,
+                            BLOCK_SIZE - 1,
+                            BLOCK_SIZE - 1
+                        );
+                        
+                        // Add highlight for 3D effect
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE,
+                            BLOCK_SIZE - 1,
+                            4
+                        );
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE,
+                            4,
+                            BLOCK_SIZE - 1
+                        );
+                        
+                        // Add shadow for 3D effect
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE + BLOCK_SIZE - 5,
+                            (y + offset.y) * BLOCK_SIZE,
+                            4,
+                            BLOCK_SIZE - 1
+                        );
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE + BLOCK_SIZE - 5,
+                            BLOCK_SIZE - 1,
+                            4
+                        );
+                    }
+                });
+            });
+        }
+
+        // Draw ghost piece (landing preview)
+        function drawGhostPiece() {
+            const ghostPos = {x: player.pos.x, y: player.pos.y};
+            
+            // Move the ghost down until collision
+            while (!checkCollision(player.matrix, {x: ghostPos.x, y: ghostPos.y + 1})) {
+                ghostPos.y++;
+            }
+            
+            // Draw ghost piece only if it's not at the same position as the actual piece
+            if (ghostPos.y !== player.pos.y) {
+                player.matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            // Semi-transparent version of the piece
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                            ctx.fillRect(
+                                (x + ghostPos.x) * BLOCK_SIZE,
+                                (y + ghostPos.y) * BLOCK_SIZE,
+                                BLOCK_SIZE - 1,
+                                BLOCK_SIZE - 1
+                            );
+                            
+                            // Ghost piece outline
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                            ctx.strokeRect(
+                                (x + ghostPos.x) * BLOCK_SIZE,
+                                (y + ghostPos.y) * BLOCK_SIZE,
+                                BLOCK_SIZE - 1,
+                                BLOCK_SIZE - 1
+                            );
+                        }
+                    });
+                });
+            }
+        }
+
+        // Draw power-ups on the board
+        function drawPowerUps() {
+            powerUps.forEach(powerUp => {
+                ctx.fillStyle = POWER_UPS[powerUp.type].color;
+                ctx.beginPath();
+                ctx.arc(
+                    (powerUp.x + 0.5) * BLOCK_SIZE,
+                    (powerUp.y + 0.5) * BLOCK_SIZE,
+                    BLOCK_SIZE / 2 - 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Add glow effect
+                ctx.shadowColor = POWER_UPS[powerUp.type].color;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // Add symbol
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(
+                    POWER_UPS[powerUp.type].symbol,
+                    (powerUp.x + 0.5) * BLOCK_SIZE,
+                    (powerUp.y + 0.5) * BLOCK_SIZE
+                );
+            });
+        }
+
+        // Draw line clear effects
+        function drawLineClearEffects() {
+            lineClearEffects.forEach((effect, index) => {
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${effect.opacity})`;
+                ctx.fill();
+                
+                // Update effect
+                effect.radius += 5;
+                effect.opacity -= 0.05;
+                
+                // Remove if faded out
+                if (effect.opacity <= 0) {
+                    lineClearEffects.splice(index, 1);
+                }
+            });
+        }
+
+        // Spawn a power-up on the board
+        function spawnPowerUp() {
+    // Get all available positions (empty cells)
+    const availablePositions = [];
+    board.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value === 0) {
+                // Check if position already has a power-up
+                const hasPowerUp = powerUps.some(pu => pu.x === x && pu.y === y);
+                if (!hasPowerUp) {
+                    availablePositions.push({x, y});
+                }
+            }
+        });
+    });
+    
+    // If there are available positions, spawn a power-up
+    if (availablePositions.length > 0) {
+        const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+        const powerUpTypes = Object.keys(POWER_UPS);
+        const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+        
+        // Also check if position conflicts with current falling piece
+        let pieceConflict = false;
+        for (let y = 0; y < player.matrix.length; y++) {
+            for (let x = 0; x < player.matrix[y].length; x++) {
+                if (player.matrix[y][x] !== 0 && 
+                    player.pos.x + x === randomPos.x && 
+                    player.pos.y + y === randomPos.y) {
+                    pieceConflict = true;
+                    break;
+                }
+            }
+            if (pieceConflict) break;
+        }
+        
+        // Only spawn if position is clear
+        if (!pieceConflict) {
+            powerUps.push({
+                x: randomPos.x,
+                y: randomPos.y,
+                type: randomType
+            });
+        }
+    }
+}
+
+        // Activate a power-up
+        function activatePowerUp(type) {
+    // Show notification
+    powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
+    powerUpNotificationElement.style.opacity = '1';
+    powerUpNotificationElement.style.backgroundColor = POWER_UPS[type].color;
+    
+    setTimeout(() => {
+        powerUpNotificationElement.style.opacity = '0';
+    }, 2000);
+    
+    // Apply power-up effect
+    switch(type) {
+        case 'CLEAR_ROW':
+            // Clear a random row that has at least one block
+            let filledRows = [];
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x] !== 0) {
+                        filledRows.push(y);
+                        break;
+                    }
+                }
+            }
+            
+            if (filledRows.length > 0) {
+                // Select a random filled row
+                const randomRow = filledRows[Math.floor(Math.random() * filledRows.length)];
+                
+                // Clear the row
+                for (let x = 0; x < COLS; x++) {
+                    board[randomRow][x] = 0;
+                }
+                
+                // Create clear effect
+                for (let i = 0; i < 5; i++) {
+                    lineClearEffects.push({
+                        x: Math.random() * canvas.width,
+                        y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
+                        radius: 5,
+                        opacity: 0.8
+                    });
+                }
+                
+                // Move rows down
+                for (let y = randomRow; y > 0; y--) {
+                    for (let x = 0; x < COLS; x++) {
+                        board[y][x] = board[y - 1][x];
+                    }
+                }
+                
+                // Clear top row
+                board[0].fill(0);
+                
+                // Update score and line count
+                updateScore(score + 100 * level);
+                updateLines(lines + 1);
+            }
+            break;
+        
+        case 'SLOW_DOWN':
+            // Slow down falling speed
+            if (!activePowerUps[type] || !activePowerUps[type].element) {
+                // Store original interval for restoration later
+                originalDropInterval = dropInterval;
+                dropInterval *= 2; // Slow down by 50%
+                
+                // Remove old element if it exists but is detached
+                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                    activePowerUpsElement.removeChild(activePowerUps[type].element);
+                }
+                
+                // Add to active power-ups
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    duration: POWER_UPS[type].duration,
+                    element: createActivePowerUpElement(type)
+                };
+                
+                // Set timer to restore speed
+                setTimeout(() => {
+                    if (!gameOver && !isPaused) {
+                        dropInterval = originalDropInterval;
+                    }
+                    // Remove from active power-ups
+                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUpsElement.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // If already active, just reset the timer
+                activePowerUps[type].startTime = performance.now();
+            }
+            break;
+        
+        case 'MULTI_CLEAR':
+            // Next line clear affects multiple rows
+            if (!activePowerUps[type] || !activePowerUps[type].element) {
+                // Remove old element if it exists but is detached
+                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                    activePowerUpsElement.removeChild(activePowerUps[type].element);
+                }
+                
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    duration: POWER_UPS[type].duration,
+                    element: createActivePowerUpElement(type)
+                };
+                
+                setTimeout(() => {
+                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUpsElement.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // If already active, just reset the timer
+                activePowerUps[type].startTime = performance.now();
+            }
+            break;
+        
+        case 'TIME_FREEZE':
+            // Temporarily freeze piece movement
+            if (!activePowerUps[type] || !activePowerUps[type].element) {
+                // Store original interval
+                originalDropInterval = dropInterval;
+                dropInterval = 9999999; // Effectively stop dropping
+                
+                // Remove old element if it exists but is detached
+                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                    activePowerUpsElement.removeChild(activePowerUps[type].element);
+                }
+                
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    duration: POWER_UPS[type].duration,
+                    element: createActivePowerUpElement(type)
+                };
+                
+                setTimeout(() => {
+                    if (!gameOver && !isPaused) {
+                        dropInterval = originalDropInterval;
+                    }
+                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUpsElement.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // If already active, just reset the timer
+                activePowerUps[type].startTime = performance.now();
+            }
+            break;
+    }
+}
+
+        // Create and add active power-up indicator
+        function createActivePowerUpElement(type) {
+    const element = document.createElement('div');
+    element.className = 'active-power-up';
+    element.style.backgroundColor = POWER_UPS[type].color + '33'; // Add transparency
+    element.style.borderColor = POWER_UPS[type].color;
+    
+    element.innerHTML = `
+        <span>${POWER_UPS[type].symbol}: ${POWER_UPS[type].effect}</span>
+        <span class="active-power-up-timer">${Math.ceil(POWER_UPS[type].duration / 1000)}s</span>
+    `;
+    activePowerUpsElement.appendChild(element);
+    
+    return element;
+}
+
+
+        // Update active power-up timers
+        function updatePowerUpTimers(time) {
+    for (let type in activePowerUps) {
+        const powerUp = activePowerUps[type];
+        const timeLeft = Math.max(0, Math.ceil((powerUp.duration - (time - powerUp.startTime)) / 1000));
+        
+        const timerElement = powerUp.element.querySelector('.active-power-up-timer');
+        if (timerElement) {
+            timerElement.textContent = `${timeLeft}s`;
+        }
+        
+        // Clean up expired power-ups (as a safety check)
+        if (timeLeft <= 0) {
+            if (powerUp.element && powerUp.element.parentNode) {
+                powerUp.element.parentNode.removeChild(powerUp.element);
+            }
+            delete activePowerUps[type];
+        }
+    }
+}
+
+        // Check if the piece collides with walls or other pieces
+        function checkCollision(matrix = player.matrix, pos = player.pos) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[y].length; x++) {
+                    if (matrix[y][x] !== 0 &&
+                        (board[y + pos.y] === undefined ||
+                         board[y + pos.y][x + pos.x] === undefined ||
+                         board[y + pos.y][x + pos.x] !== 0)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Check if the player's piece collects a power-up
+        function checkPowerUpCollection() {
+    // Check each power-up against the current piece position
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const powerUp = powerUps[i];
+        
+        // Check if any cell of the current piece overlaps with the power-up
+        let collected = false;
+        
+        for (let y = 0; y < player.matrix.length; y++) {
+            for (let x = 0; x < player.matrix[y].length; x++) {
+                if (player.matrix[y][x] !== 0 &&
+                    player.pos.x + x === powerUp.x &&
+                    player.pos.y + y === powerUp.y) {
+                    
+                    collected = true;
+                    break;
+                }
+            }
+            if (collected) break;
+        }
+        
+        if (collected) {
+            // Remove the power-up from the board
+            const collectedType = powerUp.type;
+            powerUps.splice(i, 1);
+            
+            // Activate the power-up effect
+            activatePowerUp(collectedType);
+            
+            // Add bonus score
+            updateScore(score + 50);
+        }
+    }
+}
+
+        // Merge the player's piece with the board
+        function merge() {
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        board[y + player.pos.y][x + player.pos.x] = value;
+                    }
+                });
+            });
+        }
+
+        // Drop the piece
+        function playerDrop() {
+    player.pos.y++;
+    
+    // Check for collision
+    if (checkCollision()) {
+        player.pos.y--;
+        merge();
+        playerReset();
+        arenaSweep();
+    } else {
+        // Check for power-up collection during drop
+        checkPowerUpCollection();
+    }
+    
+    dropCounter = 0;
+}
+
+
+        // Move the piece sideways
+        function playerMove(dir) {
+            player.pos.x += dir;
+            if (checkCollision()) {
+                player.pos.x -= dir;
+            }
+        }
+
+        // Rotate the piece
+        function playerRotate() {
+            const pos = player.pos.x;
+            let offset = 1;
+            rotate(player.matrix);
+            
+            // Handle wall kicks
+            while (checkCollision()) {
+                player.pos.x += offset;
+                offset = -(offset + (offset > 0 ? 1 : -1));
+                
+                // If the rotation causes too many collisions, revert back
+                if (offset > player.matrix[0].length) {
+                    rotate(player.matrix, -1); // Rotate back
+                    player.pos.x = pos;
+                    return;
+                }
+            }
+        }
+
+        // Rotate a matrix
+        function rotate(matrix, dir = 1) {
+            // Transpose the matrix
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < y; x++) {
+                    [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+                }
+            }
+            
+            // Reverse each row for clockwise rotation, or each column for counter-clockwise
+            if (dir > 0) {
+                matrix.forEach(row => row.reverse());
+            } else {
+                matrix.reverse();
+            }
+        }
+
+        // Hard drop the piece
+        function hardDrop() {
+    while (!checkCollision(player.matrix, {x: player.pos.x, y: player.pos.y + 1})) {
+        player.pos.y++;
+        updateScore(score + 1); // Add score for each cell dropped
+        
+        // Check for power-up collection during hard drop
+        checkPowerUpCollection();
+    }
+    
+    // Lock the piece and process
+    merge();
+    playerReset();
+    arenaSweep();
+    dropCounter = 0;
+}
+
+        // Hold the current piece
+        function holdPiece() {
+            if (player.canHold) {
+                if (player.hold === null) {
+                    player.hold = player.matrix;
+                    player.matrix = player.next;
+                    player.next = getRandomPiece();
+                    drawNextPiece();
+                } else {
+                    const temp = player.matrix;
+                    player.matrix = player.hold;
+                    player.hold = temp;
+                }
+                
+                player.pos.y = 0;
+                player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+                player.canHold = false;
+            }
+        }
+
+        // Check and clear completed rows
+        function arenaSweep() {
+    let rowCount = 0;
+    let rowsCleared = [];
+    
+    // Check each row from bottom to top
+    outer: for (let y = board.length - 1; y >= 0; y--) {
+        for (let x = 0; x < board[y].length; x++) {
+            if (board[y][x] === 0) {
+                continue outer;
+            }
+        }
+        
+        // This row is full - clear it
+        rowsCleared.push(y);
+        rowCount++;
+    }
+    
+    // If Multi-Clear power-up is active, clear additional rows
+    if (activePowerUps['MULTI_CLEAR'] && rowCount > 0) {
+        // Clear row above and below each cleared row
+        let extraRows = [];
+        rowsCleared.forEach(y => {
+            if (y > 0) extraRows.push(y - 1);
+            if (y < ROWS - 1) extraRows.push(y + 1);
+        });
+        
+        // Add extra rows to be cleared
+        rowsCleared = [...rowsCleared, ...extraRows];
+    }
+    
+    // Remove duplicates and sort
+    rowsCleared = [...new Set(rowsCleared)].sort((a, b) => b - a);
+    rowCount = rowsCleared.length;
+    
+    // Clear the rows
+    if (rowCount > 0) {
+        // Add visual effects for each cleared row
+        rowsCleared.forEach(y => {
+            // Create multiple particle effects along the row
+            for (let x = 0; x < COLS; x += 2) {
+                lineClearEffects.push({
+                    x: x * BLOCK_SIZE + BLOCK_SIZE / 2,
+                    y: y * BLOCK_SIZE + BLOCK_SIZE / 2,
+                    radius: 5,
+                    opacity: 0.8
+                });
+            }
+            
+            // Clear the row
+            const row = board.splice(y, 1)[0].fill(0);
+            board.unshift(row);
+        });
+        
+        // Check for combo (consecutive line clears)
+        const now = performance.now();
+        if (now - lastClearTime < 3000) { // If within 3 seconds of last clear
+            comboCount++;
+        } else {
+            comboCount = 0;
+        }
+        lastClearTime = now;
+        
+        // Calculate score based on number of rows cleared, level, and combo
+        let scoreToAdd = 0;
+        switch (rowCount) {
+            case 1:
+                scoreToAdd = 100 * level;
+                break;
+            case 2:
+                scoreToAdd = 300 * level;
+                break;
+            case 3:
+                scoreToAdd = 500 * level;
+                break;
+            case 4:
+                scoreToAdd = 800 * level;
+                break;
+            default:
+                scoreToAdd = 1000 * level;
+                break;
+        }
+        
+        // Add combo bonus
+        if (comboCount > 0) {
+            scoreToAdd += 50 * comboCount * level;
+        }
+        
+        updateScore(score + scoreToAdd);
+        updateLines(lines + rowCount);
+        
+        // Update level every 10 lines
+        if (Math.floor(lines / 10) > level - 1) {
+            updateLevel(level + 1);
+            // Increase speed with level
+            dropInterval = 1000 * (0.8 ** (level - 1));
+            originalDropInterval = dropInterval;
+        }
+    }
+}
+
+        // Update the score display
+        function updateScore(newScore) {
+            score = newScore;
+            scoreElement.textContent = score;
+        }
+
+        // Update the level display
+        function updateLevel(newLevel) {
+            level = newLevel;
+            levelElement.textContent = level;
+        }
+
+        // Update the lines display
+        function updateLines(newLines) {
+            lines = newLines;
+            linesElement.textContent = lines;
+        }
+
+        // Main game update loop
+        function update(time = 0) {
+    if (gameOver || isPaused) return;
+    
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    
+    dropCounter += deltaTime;
+    
+    // Update power-up timers
+    updatePowerUpTimers(time);
+    
+    // Check for power-up collection every frame
+    checkPowerUpCollection();
+    
+    // Move piece down when drop counter exceeds interval
+    if (dropCounter > dropInterval) {
+        playerDrop();
+    }
+    
+    draw();
+    animationId = requestAnimationFrame(update);
+}
+
+
+        // Event listeners
+        document.addEventListener('keydown', event => {
+            if (gameOver) return;
+            
+            // Handle input only if game is not paused (except for pause key)
+            if (!isPaused || event.key === 'p' || event.key === 'P') {
+                switch (event.key) {
+                    case 'ArrowLeft':
+                        playerMove(-1);
+                        break;
+                    case 'ArrowRight':
+                        playerMove(1);
+                        break;
+                    case 'ArrowDown':
+                        playerDrop();
+                        break;
+                    case 'ArrowUp':
+                        playerRotate();
+                        break;
+                    case ' ':
+                        hardDrop();
+                        break;
+                    case 'c':
+                    case 'C':
+                        holdPiece();
+                        break;
+                    case 'p':
+                    case 'P':
+                        togglePause();
+                        break;
+                }
+            }
+        });
+
+        // Button event listeners
+        startButton.addEventListener('click', startGame);
+        startScreenButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+        restartButton.addEventListener('click', () => {
+            gameOverPanel.style.display = 'none';
+            startGame();
+        });
+        showLeaderboardButton.addEventListener('click', toggleLeaderboard);
+        saveScoreButton.addEventListener('click', saveHighScore);
+
+        // Load leaderboard on page load
+        loadLeaderboard();
+
+        // Show start screen initially
+        startScreenElement.style.display = 'flex';
+        leaderboardDisplay.style.display = 'none';
+    </script>
+</body>
+</html>
