@@ -992,36 +992,73 @@
 
         // Draw power-ups on the board
         function drawPowerUps() {
-            powerUps.forEach(powerUp => {
-                ctx.fillStyle = POWER_UPS[powerUp.type].color;
-                ctx.beginPath();
-                ctx.arc(
-                    (powerUp.x + 0.5) * BLOCK_SIZE,
-                    (powerUp.y + 0.5) * BLOCK_SIZE,
-                    BLOCK_SIZE / 2 - 2,
-                    0,
-                    Math.PI * 2
-                );
-                ctx.fill();
-                
-                // Add glow effect
-                ctx.shadowColor = POWER_UPS[powerUp.type].color;
-                ctx.shadowBlur = 10;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                
-                // Add symbol
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(
-                    POWER_UPS[powerUp.type].symbol,
-                    (powerUp.x + 0.5) * BLOCK_SIZE,
-                    (powerUp.y + 0.5) * BLOCK_SIZE
-                );
-            });
+    const currentTime = performance.now();
+    
+    powerUps.forEach(powerUp => {
+        // Create pulsing effect
+        const pulseScale = 1 + 0.1 * Math.sin(currentTime / 300);
+        const baseSize = BLOCK_SIZE / 2 - 2;
+        const pulsedSize = baseSize * pulseScale;
+        
+        // Add shadow glow
+        ctx.shadowColor = POWER_UPS[powerUp.type].color;
+        ctx.shadowBlur = 15;
+        
+        // Draw outer glow
+        ctx.fillStyle = POWER_UPS[powerUp.type].color + '80'; // Semi-transparent
+        ctx.beginPath();
+        ctx.arc(
+            (powerUp.x + 0.5) * BLOCK_SIZE,
+            (powerUp.y + 0.5) * BLOCK_SIZE,
+            pulsedSize + 5,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Draw main power-up circle
+        ctx.fillStyle = POWER_UPS[powerUp.type].color;
+        ctx.beginPath();
+        ctx.arc(
+            (powerUp.x + 0.5) * BLOCK_SIZE,
+            (powerUp.y + 0.5) * BLOCK_SIZE,
+            pulsedSize,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Reset shadow for text
+        ctx.shadowBlur = 0;
+        
+        // Add symbol with enhanced text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            POWER_UPS[powerUp.type].symbol,
+            (powerUp.x + 0.5) * BLOCK_SIZE,
+            (powerUp.y + 0.5) * BLOCK_SIZE
+        );
+        
+        // Add sparkle effect (small dots around power-up)
+        if (Math.random() > 0.7) {
+            const sparkleAngle = Math.random() * Math.PI * 2;
+            const sparkleDistance = baseSize * 1.5;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(
+                (powerUp.x + 0.5) * BLOCK_SIZE + Math.cos(sparkleAngle) * sparkleDistance,
+                (powerUp.y + 0.5) * BLOCK_SIZE + Math.sin(sparkleAngle) * sparkleDistance,
+                2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
         }
+    });
+}
 
         // Draw line clear effects
         function drawLineClearEffects() {
@@ -1090,27 +1127,41 @@
 }
 
         // Activate a power-up
-        function activatePowerUp(type) {
-    // Show notification
+       function activatePowerUp(type) {
+    // Create more dramatic notification with animation
     powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
     powerUpNotificationElement.style.opacity = '1';
     powerUpNotificationElement.style.backgroundColor = POWER_UPS[type].color;
+    powerUpNotificationElement.style.transform = 'scale(1.2)';
     
+    // Add sound effect placeholder (you can add actual sounds later)
+    // console.log(`Playing power-up sound for: ${type}`);
+    
+    // Reset animation after a brief moment
+    setTimeout(() => {
+        powerUpNotificationElement.style.transform = 'scale(1)';
+    }, 200);
+    
+    // Hide notification after delay
     setTimeout(() => {
         powerUpNotificationElement.style.opacity = '0';
     }, 2000);
     
-    // Apply power-up effect
+    // Apply power-up effect with improvements
     switch(type) {
         case 'CLEAR_ROW':
             // Clear a random row that has at least one block
             let filledRows = [];
             for (let y = 0; y < ROWS; y++) {
+                let hasBlocks = false;
                 for (let x = 0; x < COLS; x++) {
                     if (board[y][x] !== 0) {
-                        filledRows.push(y);
+                        hasBlocks = true;
                         break;
                     }
+                }
+                if (hasBlocks) {
+                    filledRows.push(y);
                 }
             }
             
@@ -1118,133 +1169,191 @@
                 // Select a random filled row
                 const randomRow = filledRows[Math.floor(Math.random() * filledRows.length)];
                 
-                // Clear the row
+                // Enhanced visual effect before clearing
                 for (let x = 0; x < COLS; x++) {
-                    board[randomRow][x] = 0;
-                }
-                
-                // Create clear effect
-                for (let i = 0; i < 5; i++) {
-                    lineClearEffects.push({
-                        x: Math.random() * canvas.width,
-                        y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
-                        radius: 5,
-                        opacity: 0.8
-                    });
-                }
-                
-                // Move rows down
-                for (let y = randomRow; y > 0; y--) {
-                    for (let x = 0; x < COLS; x++) {
-                        board[y][x] = board[y - 1][x];
+                    // Store original color
+                    const blockValue = board[randomRow][x];
+                    if (blockValue !== 0) {
+                        // Create special "about to clear" effect
+                        lineClearEffects.push({
+                            x: (x + 0.5) * BLOCK_SIZE,
+                            y: (randomRow + 0.5) * BLOCK_SIZE,
+                            radius: BLOCK_SIZE / 2,
+                            opacity: 1
+                        });
                     }
                 }
                 
-                // Clear top row
-                board[0].fill(0);
-                
-                // Update score and line count
-                updateScore(score + 100 * level);
-                updateLines(lines + 1);
+                // Delay the actual clearing for visual effect
+                setTimeout(() => {
+                    // Clear the row
+                    for (let x = 0; x < COLS; x++) {
+                        board[randomRow][x] = 0;
+                    }
+                    
+                    // Create more dramatic clear effects
+                    for (let i = 0; i < 10; i++) {
+                        lineClearEffects.push({
+                            x: (Math.random() * COLS) * BLOCK_SIZE,
+                            y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
+                            radius: 5 + Math.random() * 10,
+                            opacity: 0.8
+                        });
+                    }
+                    
+                    // Move rows down
+                    for (let y = randomRow; y > 0; y--) {
+                        for (let x = 0; x < COLS; x++) {
+                            board[y][x] = board[y - 1][x];
+                        }
+                    }
+                    
+                    // Clear top row
+                    board[0].fill(0);
+                    
+                    // Update score and line count with bonus for power-up use
+                    updateScore(score + 150 * level); // Increased from 100 to 150
+                    updateLines(lines + 1);
+                }, 100);
             }
             break;
         
-        case 'SLOW_DOWN':
-            // Slow down falling speed
-            if (!activePowerUps[type] || !activePowerUps[type].element) {
-                // Store original interval for restoration later
-                originalDropInterval = dropInterval;
-                dropInterval *= 2; // Slow down by 50%
-                
-                // Remove old element if it exists but is detached
-                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                    activePowerUpsElement.removeChild(activePowerUps[type].element);
-                }
-                
-                // Add to active power-ups
-                activePowerUps[type] = {
-                    startTime: performance.now(),
-                    duration: POWER_UPS[type].duration,
-                    element: createActivePowerUpElement(type)
-                };
-                
-                // Set timer to restore speed
-                setTimeout(() => {
-                    if (!gameOver && !isPaused) {
-                        dropInterval = originalDropInterval;
-                    }
-                    // Remove from active power-ups
-                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                        activePowerUpsElement.removeChild(activePowerUps[type].element);
-                    }
-                    delete activePowerUps[type];
-                }, POWER_UPS[type].duration);
-            } else {
-                // If already active, just reset the timer
-                activePowerUps[type].startTime = performance.now();
+            case 'SLOW_DOWN':
+    // Improved slow down effect with smoother transitions
+    if (activePowerUps[type]) {
+        // If already active, just extend the duration
+        clearTimeout(activePowerUps[type].timer);
+        activePowerUps[type].startTime = performance.now();
+        
+        // Update the display
+        if (activePowerUps[type].element) {
+            const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+            if (timerElement) {
+                timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
             }
-            break;
+        }
+        
+        // Set a new timer to restore normal speed when done
+        activePowerUps[type].timer = setTimeout(() => {
+            // Gradually restore normal game speed
+            smoothlyTransitionSpeed(gameSpeed, activePowerUps[type].originalSpeed, 500);
+            
+            // Clean up the power-up state
+            removeActivePowerUpDisplay(type);
+            delete activePowerUps[type];
+        }, POWER_UPS[type].duration);
+    } else {
+        // First activation of slow down
+        const originalSpeed = gameSpeed;
+        
+        // Gradually apply the slow down effect
+        smoothlyTransitionSpeed(gameSpeed, gameSpeed * 0.5, 500);
+        
+        // Track the power-up state
+        activePowerUps[type] = {
+            startTime: performance.now(),
+            originalSpeed: originalSpeed,
+            timer: setTimeout(() => {
+                // Gradually restore normal game speed
+                smoothlyTransitionSpeed(gameSpeed, activePowerUps[type].originalSpeed, 500);
+                
+                // Clean up
+                removeActivePowerUpDisplay(type);
+                delete activePowerUps[type];
+            }, POWER_UPS[type].duration)
+        };
+        
+        // Add visual indicator
+        addActivePowerUpDisplay(type, POWER_UPS[type].duration);
+    }
+    break;
         
         case 'MULTI_CLEAR':
-            // Next line clear affects multiple rows
-            if (!activePowerUps[type] || !activePowerUps[type].element) {
-                // Remove old element if it exists but is detached
-                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                    activePowerUpsElement.removeChild(activePowerUps[type].element);
+            // Improved multi-clear with visual indicator
+            if (activePowerUps[type]) {
+                // If already active, extend the duration
+                clearTimeout(activePowerUps[type].timer);
+                activePowerUps[type].startTime = performance.now();
+                
+                // Update the display
+                if (activePowerUps[type].element) {
+                    const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                    if (timerElement) {
+                        timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                    }
                 }
                 
+                // Set new timeout
+                activePowerUps[type].timer = setTimeout(() => {
+                    endPowerUpEffect(type);
+                }, POWER_UPS[type].duration);
+            } else {
+                // Add subtle board highlighting to indicate multi-clear is active
+                canvas.style.boxShadow = `0 0 20px ${POWER_UPS[type].color}`;
+                
+                // Create new active power-up entry
                 activePowerUps[type] = {
                     startTime: performance.now(),
                     duration: POWER_UPS[type].duration,
-                    element: createActivePowerUpElement(type)
+                    element: createActivePowerUpElement(type),
+                    timer: null
                 };
                 
-                setTimeout(() => {
-                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                        activePowerUpsElement.removeChild(activePowerUps[type].element);
-                    }
-                    delete activePowerUps[type];
+                // Set timer to end effect
+                activePowerUps[type].timer = setTimeout(() => {
+                    endPowerUpEffect(type);
+                    // Remove board highlighting
+                    canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
                 }, POWER_UPS[type].duration);
-            } else {
-                // If already active, just reset the timer
-                activePowerUps[type].startTime = performance.now();
             }
             break;
         
         case 'TIME_FREEZE':
-            // Temporarily freeze piece movement
-            if (!activePowerUps[type] || !activePowerUps[type].element) {
+            // Enhanced time freeze with visual effects
+            if (activePowerUps[type]) {
+                // If already active, extend the duration
+                clearTimeout(activePowerUps[type].timer);
+                activePowerUps[type].startTime = performance.now();
+                
+                // Update the display
+                if (activePowerUps[type].element) {
+                    const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                    if (timerElement) {
+                        timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                    }
+                }
+                
+                // Set new timeout
+                activePowerUps[type].timer = setTimeout(() => {
+                    endPowerUpEffect(type);
+                }, POWER_UPS[type].duration);
+            } else {
                 // Store original interval
                 originalDropInterval = dropInterval;
                 dropInterval = 9999999; // Effectively stop dropping
                 
-                // Remove old element if it exists but is detached
-                if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                    activePowerUpsElement.removeChild(activePowerUps[type].element);
-                }
+                // Add freeze visual effect
+                canvas.style.filter = 'brightness(1.2) saturate(0.8)';
                 
+                // Create new active power-up entry
                 activePowerUps[type] = {
                     startTime: performance.now(),
                     duration: POWER_UPS[type].duration,
-                    element: createActivePowerUpElement(type)
+                    element: createActivePowerUpElement(type),
+                    timer: null
                 };
                 
-                setTimeout(() => {
-                    if (!gameOver && !isPaused) {
-                        dropInterval = originalDropInterval;
-                    }
-                    if (activePowerUps[type] && activePowerUps[type].element && activePowerUps[type].element.parentNode) {
-                        activePowerUpsElement.removeChild(activePowerUps[type].element);
-                    }
-                    delete activePowerUps[type];
+                // Set timer to end effect
+                activePowerUps[type].timer = setTimeout(() => {
+                    endPowerUpEffect(type);
+                    // Remove freeze visual effect
+                    canvas.style.filter = 'none';
                 }, POWER_UPS[type].duration);
-            } else {
-                // If already active, just reset the timer
-                activePowerUps[type].startTime = performance.now();
             }
             break;
     }
 }
+
 
         // Create and add active power-up indicator
         function createActivePowerUpElement(type) {
@@ -1448,104 +1557,405 @@
         }
 
         // Check and clear completed rows
-        function arenaSweep() {
-    let rowCount = 0;
-    let rowsCleared = [];
+      // Function to clear completed rows and update score
+function arenaSweep() {
+    // First pass: identify which rows are complete
+    const completedRows = [];
     
     // Check each row from bottom to top
-    outer: for (let y = board.length - 1; y >= 0; y--) {
+    for (let y = board.length - 1; y >= 0; y--) {
+        let rowComplete = true;
+        
+        // Check if every cell in the row is filled
         for (let x = 0; x < board[y].length; x++) {
             if (board[y][x] === 0) {
-                continue outer;
+                rowComplete = false;
+                break;
             }
         }
         
-        // This row is full - clear it
-        rowsCleared.push(y);
-        rowCount++;
+        // If row is complete, mark it for removal
+        if (rowComplete) {
+            completedRows.push(y);
+        }
     }
     
-    // If Multi-Clear power-up is active, clear additional rows
-    if (activePowerUps['MULTI_CLEAR'] && rowCount > 0) {
-        // Clear row above and below each cleared row
-        let extraRows = [];
-        rowsCleared.forEach(y => {
-            if (y > 0) extraRows.push(y - 1);
-            if (y < ROWS - 1) extraRows.push(y + 1);
+    // If no rows are complete, reset combo
+    if (completedRows.length === 0) {
+        comboCount = 0;
+        return;
+    }
+    
+    // Track combo for consecutive line clears
+    const currentTime = performance.now();
+    if (currentTime - lastClearTime < 2000) {
+        comboCount++;
+    } else {
+        comboCount = 1;
+    }
+    lastClearTime = currentTime;
+    
+    // Enhanced visual effects for line clears
+    completedRows.forEach(y => {
+        // Flash effect on the rows before they disappear
+        for (let x = 0; x < COLS; x++) {
+            lineClearEffects.push({
+                x: (x + 0.5) * BLOCK_SIZE,
+                y: (y + 0.5) * BLOCK_SIZE,
+                radius: 10,
+                opacity: 1
+            });
+        }
+    });
+    
+    
+    function processClearAnimation(rowsToProcess, isBonus = false) {
+    if (rowsToProcess.length === 0) {
+        animationInProgress = false;
+        return;
+    }
+    
+    animationInProgress = true;
+    const currentRow = rowsToProcess.shift();
+    
+    // Add flash effect for current row
+    for (let x = 0; x < COLS; x++) {
+        lineClearEffects.push({
+            x: (x + 0.5) * BLOCK_SIZE,
+            y: (currentRow + 0.5) * BLOCK_SIZE,
+            radius: 10,
+            opacity: isBonus ? 0.7 : 1,
+            color: isBonus ? POWER_UPS['MULTI_CLEAR'].color : undefined
         });
-        
-        // Add extra rows to be cleared
-        rowsCleared = [...rowsCleared, ...extraRows];
     }
     
-    // Remove duplicates and sort
-    rowsCleared = [...new Set(rowsCleared)].sort((a, b) => b - a);
-    rowCount = rowsCleared.length;
+    // Add a slight delay before processing the next row
+    setTimeout(() => {
+        processClearAnimation(rowsToProcess, isBonus);
+    }, 100); // Delay between row animations
+}
+
+// Check all rows for completions
+function checkForCompletedRows() {
+    const completedRows = [];
     
-    // Clear the rows
-    if (rowCount > 0) {
-        // Add visual effects for each cleared row
-        rowsCleared.forEach(y => {
-            // Create multiple particle effects along the row
-            for (let x = 0; x < COLS; x += 2) {
-                lineClearEffects.push({
-                    x: x * BLOCK_SIZE + BLOCK_SIZE / 2,
-                    y: y * BLOCK_SIZE + BLOCK_SIZE / 2,
-                    radius: 5,
-                    opacity: 0.8
-                });
+    // Check each row for completion
+    for (let y = 0; y < ROWS; y++) {
+        if (board[y].every(cell => cell !== 0)) {
+            completedRows.push(y);
+        }
+    }
+    
+    return completedRows;
+}
+
+// Begin animation process for completed rows
+if (completedRows.length > 0) {
+    // Sort rows in descending order to avoid index shifting issues
+    completedRows.sort((a, b) => b - a);
+    
+    // Make a copy of the rows for animation
+    const rowsToClear = [...completedRows];
+    
+    // Process the visual animation first
+    processClearAnimation(rowsToClear);
+    
+    // After all animations complete, actually update the board
+    const updateBoard = () => {
+        if (animationInProgress) {
+            setTimeout(updateBoard, 100);
+            return;
+        }
+        
+        // Store the original board state before modifications
+        const originalBoard = JSON.parse(JSON.stringify(board));
+        
+        // Apply the actual board changes all at once after animations finish
+        for (const row of completedRows) {
+            board.splice(row, 1);
+            // Add a new empty row at the top
+            board.unshift(new Array(COLS).fill(0));
+        }
+        
+        // Update lines count for primary cleared rows
+        updateLines(lines + completedRows.length);
+        
+        // Handle bonus rows if multi-clear is active
+        if (multiClearActive) {
+            // Need to check for additional rows that might be completed
+            // after the first set of rows are cleared
+            const bonusRows = [];
+            
+            // Check for rows above each cleared row from the original board
+            for (const y of completedRows) {
+                const rowAbove = y - 1;
+                if (rowAbove >= 0 && !completedRows.includes(rowAbove) && !bonusRows.includes(rowAbove)) {
+                    // Check if this row would be complete in the original board
+                    if (originalBoard[rowAbove].every(cell => cell !== 0)) {
+                        bonusRows.push(rowAbove);
+                    }
+                }
             }
             
-            // Clear the row
-            const row = board.splice(y, 1)[0].fill(0);
-            board.unshift(row);
-        });
-        
-        // Check for combo (consecutive line clears)
-        const now = performance.now();
-        if (now - lastClearTime < 3000) { // If within 3 seconds of last clear
-            comboCount++;
-        } else {
-            comboCount = 0;
+            // Sort bonus rows in descending order
+            bonusRows.sort((a, b) => b - a);
+            
+            // Update the lines count for bonus rows too
+            if (bonusRows.length > 0) {
+                updateLines(lines + bonusRows.length);
+                
+                // Process bonus row animations
+                animationInProgress = true;
+                processClearAnimation([...bonusRows], true);
+                
+                // After bonus animations, update the board again
+                setTimeout(() => {
+                    const checkBonusCompletion = setInterval(() => {
+                        if (!animationInProgress) {
+                            clearInterval(checkBonusCompletion);
+                            
+                            // Remove bonus rows
+                            for (const row of bonusRows) {
+                                board.splice(row, 1);
+                                // Add a new empty row at the top
+                                board.unshift(new Array(COLS).fill(0));
+                            }
+                        }
+                    }, 100);
+                }, 200);
+            }
         }
-        lastClearTime = now;
+    };
+    
+    // Start the board update process after animations should be complete
+    setTimeout(updateBoard, (completedRows.length * 100) + 200);
+} else {
+    // Reset combo if no rows cleared
+    comboCount = 0;
+}
+
+// A more comprehensive fix would be to recheck the entire board after every move
+// This ensures ALL completed rows are found, not just the ones directly created by the falling piece
+function recheckEntireBoard() {
+    // This should be called after a piece is placed and before the next piece spawns
+    // Get all completed rows
+    const allCompletedRows = checkForCompletedRows();
+    
+    if (allCompletedRows.length > 0) {
+        // Process these rows using the animation system
+        // Sort rows in descending order
+        allCompletedRows.sort((a, b) => b - a);
         
-        // Calculate score based on number of rows cleared, level, and combo
-        let scoreToAdd = 0;
-        switch (rowCount) {
-            case 1:
-                scoreToAdd = 100 * level;
-                break;
-            case 2:
-                scoreToAdd = 300 * level;
-                break;
-            case 3:
-                scoreToAdd = 500 * level;
-                break;
-            case 4:
-                scoreToAdd = 800 * level;
-                break;
-            default:
-                scoreToAdd = 1000 * level;
-                break;
-        }
+        // Update lines count
+        updateLines(lines + allCompletedRows.length);
         
-        // Add combo bonus
-        if (comboCount > 0) {
-            scoreToAdd += 50 * comboCount * level;
-        }
+        // Start animations
+        animationInProgress = true;
+        processClearAnimation([...allCompletedRows]);
         
-        updateScore(score + scoreToAdd);
-        updateLines(lines + rowCount);
+        // Apply changes after animations complete
+        const finalizeChanges = () => {
+            if (animationInProgress) {
+                setTimeout(finalizeChanges, 100);
+                return;
+            }
+            
+            // Remove all completed rows at once
+            for (const row of allCompletedRows) {
+                board.splice(row, 1);
+                // Add new empty rows at the top
+                board.unshift(new Array(COLS).fill(0));
+            }
+        };
         
-        // Update level every 10 lines
-        if (Math.floor(lines / 10) > level - 1) {
-            updateLevel(level + 1);
-            // Increase speed with level
-            dropInterval = 1000 * (0.8 ** (level - 1));
-            originalDropInterval = dropInterval;
+        setTimeout(finalizeChanges, (allCompletedRows.length * 100) + 200);
+        return true; // Rows were cleared
+    }
+    
+    return false; // No rows were cleared
+}
+    
+    // Calculate score based on number of lines cleared and current level
+    let linesScore = 0;
+    switch (completedRows.length) {
+        case 1:
+            linesScore = 100 * level;
+            break;
+        case 2:
+            linesScore = 300 * level;
+            break;
+        case 3:
+            linesScore = 500 * level;
+            break;
+        case 4:
+            linesScore = 800 * level;  // Tetris (4 lines)
+            break;
+        default:
+            // More than 4 lines (could happen with power-ups)
+            linesScore = 1000 * level + ((completedRows.length - 4) * 200 * level);
+    }
+    
+    // Add combo bonus
+    if (comboCount > 1) {
+        linesScore += (comboCount * 50) * level;
+    }
+    
+    // Update score, lines cleared, and level
+    updateScore(score + linesScore);
+    updateLines(lines + completedRows.length);
+    
+    // Check if level up needed
+    const newLevel = Math.floor(lines / 10) + 1;
+    if (newLevel > level) {
+        updateLevel(newLevel);
+        
+        // Increase game speed with each level
+        dropInterval = originalDropInterval * Math.pow(0.8, level - 1);
+    }
+}
+function checkAndClearBlocks() {
+    let blocksCleared = false;
+    
+    // Check each row for completely filled blocks
+    for (let row = 0; row < grid.length; row++) {
+        for (let col = 0; col < grid[row].length; col++) {
+            // Check if this block is the start of a filled area
+            if (grid[row][col] && isBlockFilled(row, col)) {
+                // Clear the entire filled area
+                clearFilledArea(row, col);
+                blocksCleared = true;
+            }
         }
     }
+    
+    // Return whether any blocks were cleared this check
+    return blocksCleared;
+}
+
+// Check if a block is completely filled (no empty cells)
+function isBlockFilled(startRow, startCol) {
+    const blockType = grid[startRow][startCol];
+    if (!blockType) return false;
+    
+    // Determine the boundaries of this block
+    const blockSize = getBlockSize(blockType);
+    
+    // Check every cell in the block
+    for (let r = 0; r < blockSize.height; r++) {
+        for (let c = 0; c < blockSize.width; c++) {
+            const row = startRow + r;
+            const col = startCol + c;
+            
+            // If any cell is outside the grid or empty, the block is not filled
+            if (row >= grid.length || col >= grid[0].length || !grid[row][col]) {
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+// Clear a fully filled area and award points
+function clearFilledArea(startRow, startCol) {
+    const blockType = grid[startRow][startCol];
+    const blockSize = getBlockSize(blockType);
+    
+    // Clear all cells in the block
+    for (let r = 0; r < blockSize.height; r++) {
+        for (let c = 0; c < blockSize.width; c++) {
+            const row = startRow + r;
+            const col = startCol + c;
+            
+            // Clear this cell
+            grid[row][col] = null;
+            
+            // Add visual effect for cleared block
+            addClearEffect(row, col);
+        }
+    }
+    
+    // Award points based on block size
+    score += blockSize.width * blockSize.height * POINTS_PER_CELL;
+    updateScore();
+}
+
+// Run the check after each block placement or at regular intervals in your game loop
+function gameLoop() {
+    // Other game logic...
+    
+    // Always check for and clear filled blocks
+    while(checkAndClearBlocks()) {
+        // Continue checking until no more blocks can be cleared
+        // This ensures cascading clears if removing one block makes another complete
+    }
+    
+    // More game logic...
+}
+
+// Function to end power-up effect (to be used in the activatePowerUp function)
+function endPowerUpEffect(type) {
+    const powerUp = activePowerUps[type];
+    if (!powerUp) return;
+    
+    // Clear the timer
+    if (powerUp.timer) {
+        clearTimeout(powerUp.timer);
+    }
+    
+    // Remove the display element
+    if (powerUp.element && powerUp.element.parentNode) {
+        powerUp.element.parentNode.removeChild(powerUp.element);
+    }
+    
+    // Handle specific cleanup for power-up types
+    switch(type) {
+        case 'TIME_FREEZE':
+            // Restore the original drop interval
+            dropInterval = originalDropInterval;
+            // Remove any visual effects
+            canvas.style.filter = 'none';
+            break;
+        case 'SLOW_DOWN':
+            // Restore original game speed (if there was a gameSpeed variable)
+            if (powerUp.originalSpeed !== undefined) {
+                gameSpeed = powerUp.originalSpeed;
+            }
+            break;
+        case 'MULTI_CLEAR':
+            // Remove board highlighting
+            canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
+            break;
+    }
+    
+    // Remove the power-up from active list
+    delete activePowerUps[type];
+}
+
+// Helper function to remove active power-up display (used in other functions)
+function removeActivePowerUpDisplay(type) {
+    if (activePowerUps[type] && activePowerUps[type].element) {
+        if (activePowerUps[type].element.parentNode) {
+            activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+        }
+        activePowerUps[type].element = null;
+    }
+}
+
+// Helper function to add active power-up display (used in other functions)
+function addActivePowerUpDisplay(type, duration) {
+    const element = document.createElement('div');
+    element.className = 'active-power-up';
+    element.style.backgroundColor = POWER_UPS[type].color + '33'; // Add transparency
+    element.style.borderColor = POWER_UPS[type].color;
+    
+    element.innerHTML = `
+        <span>${POWER_UPS[type].symbol}: ${POWER_UPS[type].effect}</span>
+        <span class="active-power-up-timer">${Math.ceil(duration / 1000)}s</span>
+    `;
+    activePowerUpsElement.appendChild(element);
+    
+    return element;
 }
 
         // Update the score display
