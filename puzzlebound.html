@@ -1330,13 +1330,12 @@
                 break;
             
                 case 'SLOW_DOWN':
-        // Improved slow down effect with better timekeeping
+    try {
         if (activePowerUps[type]) {
-            // If already active, just extend the duration
+            // Power-up already active - just extend duration
             clearTimeout(activePowerUps[type].timer);
-            activePowerUps[type].startTime = performance.now();
             
-            // Update the display
+            // Update display if it exists
             if (activePowerUps[type].element) {
                 const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
                 if (timerElement) {
@@ -1344,41 +1343,69 @@
                 }
             }
             
-            // Set a new timer to restore normal speed when done
+            // Set new expiration timer
             activePowerUps[type].timer = setTimeout(() => {
-                // Restore normal game speed
-                gameSpeed = originalGameSpeed; // You'll need to track the original speed
-                
-                // Clean up the power-up state
-                removeActivePowerUpDisplay(type);
-                delete activePowerUps[type];
-            }, POWER_UPS[type].duration);
-        } else {
-            // First activation of slow down
-            // Store the original game speed
-            const originalGameSpeed = gameSpeed;
-            
-            // Apply the slow down effect
-            gameSpeed = gameSpeed * 0.5; // Reduce speed by half (adjust factor as needed)
-            
-            // Track the power-up state
-            activePowerUps[type] = {
-                startTime: performance.now(),
-                originalSpeed: originalGameSpeed,
-                timer: setTimeout(() => {
-                    // Restore normal game speed
-                    gameSpeed = originalGameSpeed;
+                try {
+                    // Restore original block speed
+                    blockSpeed = activePowerUps[type].originalBlockSpeed;
+                    
+                    // Apply speed to all existing blocks
+                    blocks.forEach(block => {
+                        block.speed = blockSpeed;
+                    });
                     
                     // Clean up
                     removeActivePowerUpDisplay(type);
                     delete activePowerUps[type];
-                }, POWER_UPS[type].duration)
+                } catch (error) {
+                    console.error("Error in slow-down expiration:", error);
+                }
+            }, POWER_UPS[type].duration);
+        } else {
+            // First activation - store current block speed before changing it
+            const currentBlockSpeed = blockSpeed || getDefaultBlockSpeed();
+            
+            activePowerUps[type] = {
+                startTime: performance.now(),
+                originalBlockSpeed: currentBlockSpeed, // Store current block speed
+                element: null
             };
             
+            // Apply the effect - reduce block speed by half
+            blockSpeed = currentBlockSpeed * 0.5;
+            
+            // Apply new speed to all existing blocks
+            blocks.forEach(block => {
+                block.speed = blockSpeed;
+            });
+            
+            // Set expiration timer
+            activePowerUps[type].timer = setTimeout(() => {
+                try {
+                    // Restore speed
+                    blockSpeed = activePowerUps[type].originalBlockSpeed;
+                    
+                    // Apply original speed to all existing blocks
+                    blocks.forEach(block => {
+                        block.speed = blockSpeed;
+                    });
+                    
+                    // Clean up
+                    removeActivePowerUpDisplay(type);
+                    delete activePowerUps[type];
+                } catch (error) {
+                    console.error("Error in slow-down expiration:", error);
+                }
+            }, POWER_UPS[type].duration);
+            
             // Add visual indicator
-            addActivePowerUpDisplay(type, POWER_UPS[type].duration);
+            activePowerUps[type].element = addActivePowerUpDisplay(type, POWER_UPS[type].duration);
         }
-        break;
+    } catch (error) {
+        console.error("Error in SLOW_DOWN power-up:", error);
+        // Fail gracefully - don't let an error stop the game
+    }
+    break;
             
             case 'MULTI_CLEAR':
                 // Improved multi-clear with visual indicator
@@ -1555,7 +1582,33 @@
             }
         }
     }
-    function checkAndClearBlocks() {
+    function getBlockSize(blockType) {
+    // Add handling for the "slow" power-up
+    if (blockType === "slow") {
+        // Return an appropriate size for the slow power-up
+        // Assuming it's a 1x1 block, but adjust as needed for your game
+        return { width: 1, height: 1 };
+    }
+    
+    // Original block size handling for other block types
+    switch(blockType) {
+        case "square":
+            return { width: 2, height: 2 };
+        case "line":
+            return { width: 1, height: 4 };
+        case "tBlock":
+            return { width: 3, height: 2 };
+        case "lBlock":
+            return { width: 2, height: 3 };
+        // Add other block types as needed
+        default:
+            // Safe fallback for any unknown block types
+            console.warn(`Unknown block type: ${blockType}`);
+            return { width: 1, height: 1 };
+    }
+}
+
+function checkAndClearBlocks() {
     let blocksCleared = false;
     
     // Check each row for completely filled blocks
@@ -1582,6 +1635,12 @@ function isBlockFilled(startRow, startCol) {
     // Determine the boundaries of this block
     const blockSize = getBlockSize(blockType);
     
+    // Add safety check to prevent crashes
+    if (!blockSize || typeof blockSize.width !== 'number' || typeof blockSize.height !== 'number') {
+        console.error(`Invalid block size for type: ${blockType}`);
+        return false;
+    }
+    
     // Check every cell in the block
     for (let r = 0; r < blockSize.height; r++) {
         for (let c = 0; c < blockSize.width; c++) {
@@ -1603,17 +1662,26 @@ function clearFilledArea(startRow, startCol) {
     const blockType = grid[startRow][startCol];
     const blockSize = getBlockSize(blockType);
     
+    // Add safety check to prevent crashes
+    if (!blockSize || typeof blockSize.width !== 'number' || typeof blockSize.height !== 'number') {
+        console.error(`Invalid block size for type: ${blockType}`);
+        return;
+    }
+    
     // Clear all cells in the block
     for (let r = 0; r < blockSize.height; r++) {
         for (let c = 0; c < blockSize.width; c++) {
             const row = startRow + r;
             const col = startCol + c;
             
-            // Clear this cell
-            grid[row][col] = null;
-            
-            // Add visual effect for cleared block
-            addClearEffect(row, col);
+            // Check bounds before accessing grid
+            if (row < grid.length && col < grid[0].length) {
+                // Clear this cell
+                grid[row][col] = null;
+                
+                // Add visual effect for cleared block
+                addClearEffect(row, col);
+            }
         }
     }
     
@@ -1728,48 +1796,25 @@ function gameLoop() {
     }
 
 
-            // Check and clear completed rows
-        // Function to clear completed rows and update score
-    function arenaSweep() {
-        // First pass: identify which rows are complete
-        const completedRows = [];
+        // Check and clear completed rows
+function arenaSweep() {
+    let rowsCleared = 0;
+    
+    // Check each row from bottom to top
+    for (let y = board.length - 1; y >= 0; y--) {
+        let rowComplete = true;
         
-        // Check each row from bottom to top
-        for (let y = board.length - 1; y >= 0; y--) {
-            let rowComplete = true;
-            
-            // Check if every cell in the row is filled
-            for (let x = 0; x < board[y].length; x++) {
-                if (board[y][x] === 0) {
-                    rowComplete = false;
-                    break;
-                }
-            }
-            
-            // If row is complete, mark it for removal
-            if (rowComplete) {
-                completedRows.push(y);
+        // Check if every cell in the row is filled
+        for (let x = 0; x < board[y].length; x++) {
+            if (board[y][x] === 0) {
+                rowComplete = false;
+                break;
             }
         }
         
-        // If no rows are complete, reset combo
-        if (completedRows.length === 0) {
-            comboCount = 0;
-            return;
-        }
-        
-        // Track combo for consecutive line clears
-        const currentTime = performance.now();
-        if (currentTime - lastClearTime < 2000) {
-            comboCount++;
-        } else {
-            comboCount = 1;
-        }
-        lastClearTime = currentTime;
-        
-        // Enhanced visual effects for line clears
-        completedRows.forEach(y => {
-            // Flash effect on the rows before they disappear
+        // If row is complete, remove it
+        if (rowComplete) {
+            // Create clear effect before removing the row
             for (let x = 0; x < COLS; x++) {
                 lineClearEffects.push({
                     x: (x + 0.5) * BLOCK_SIZE,
@@ -1778,84 +1823,74 @@ function gameLoop() {
                     opacity: 1
                 });
             }
-        });
-        
-        // Sort rows in descending order to avoid indexing issues when removing multiple rows
-        completedRows.sort((a, b) => b - a);
-        
-        // Check for multi-clear power-up
-      
-        
-        // Process the completed rows
-        for (const y of completedRows) {
-            // Remove the completed row
-            board.splice(y, 1);
             
-            // Add a new empty row at the top
-            board.unshift(new Array(COLS).fill(0));
+            // Remove the row and add empty row at top
+            const row = board.splice(y, 1)[0].fill(0);
+            board.unshift(row);
             
-            // Check if multi-clear power-up is active
-            if (multiClearActive) {
-                // Multi-clear power-up effect: clear additional row if possible
-                // Remove the row above if it exists and isn't already marked for removal
-                const rowAbove = y - 1;
-                if (rowAbove >= 0 && !completedRows.includes(rowAbove)) {
-                    // Apply the same clearing logic for bonus row
-                    board.splice(rowAbove, 1);
-                    board.unshift(new Array(COLS).fill(0));
-                    
-                    // Add visual effects for the bonus row clear
-                    for (let x = 0; x < COLS; x++) {
-                        lineClearEffects.push({
-                            x: (x + 0.5) * BLOCK_SIZE,
-                            y: (rowAbove + 0.5) * BLOCK_SIZE,
-                            radius: 10,
-                            opacity: 0.7,
-                            color: POWER_UPS['MULTI_CLEAR'].color  // Use power-up color for bonus effect
-                        });
-                    }
-                }
-            }
-        }
-        
-        // Calculate score based on number of lines cleared and current level
-        let linesScore = 0;
-        switch (completedRows.length) {
-            case 1:
-                linesScore = 100 * level;
-                break;
-            case 2:
-                linesScore = 300 * level;
-                break;
-            case 3:
-                linesScore = 500 * level;
-                break;
-            case 4:
-                linesScore = 800 * level;  // Tetris (4 lines)
-                break;
-            default:
-                // More than 4 lines (could happen with power-ups)
-                linesScore = 1000 * level + ((completedRows.length - 4) * 200 * level);
-        }
-        
-        // Add combo bonus
-        if (comboCount > 1) {
-            linesScore += (comboCount * 50) * level;
-        }
-        
-        // Update score, lines cleared, and level
-        updateScore(score + linesScore);
-        updateLines(lines + completedRows.length);
-        
-        // Check if level up needed
-        const newLevel = Math.floor(lines / 10) + 1;
-        if (newLevel > level) {
-            updateLevel(newLevel);
+            // Since we removed a row, we need to check the same y again
+            y++;
             
-            // Increase game speed with each level
-            dropInterval = originalDropInterval * Math.pow(0.8, level - 1);
+            rowsCleared++;
         }
     }
+    
+    // If no rows cleared, reset combo
+    if (rowsCleared === 0) {
+        comboCount = 0;
+        return;
+    }
+    
+    // Update combo count for consecutive line clears
+    const currentTime = performance.now();
+    if (currentTime - lastClearTime < 2000) {
+        comboCount++;
+    } else {
+        comboCount = 1;
+    }
+    lastClearTime = currentTime;
+    
+    // Check for multi-clear power-up
+    const multiClearActive = activePowerUps['MULTI_CLEAR'] !== undefined;
+    
+    // Calculate score based on rows cleared
+    let linesScore = 0;
+    switch (rowsCleared) {
+        case 1:
+            linesScore = 100 * level;
+            break;
+        case 2:
+            linesScore = 300 * level;
+            break;
+        case 3:
+            linesScore = 500 * level;
+            break;
+        case 4:
+            linesScore = 800 * level;  // Tetris (4 lines)
+            break;
+        default:
+            // More than 4 lines (could happen with power-ups)
+            linesScore = 1000 * level + ((rowsCleared - 4) * 200 * level);
+    }
+    
+    // Add combo bonus
+    if (comboCount > 1) {
+        linesScore += (comboCount * 50) * level;
+    }
+    
+    // Update score, lines cleared, and level
+    updateScore(score + linesScore);
+    updateLines(lines + rowsCleared);
+    
+    // Check if level up needed
+    const newLevel = Math.floor(lines / 10) + 1;
+    if (newLevel > level) {
+        updateLevel(newLevel);
+        
+        // Increase game speed with each level
+        dropInterval = originalDropInterval * Math.pow(0.8, level - 1);
+    }
+}
         // Sweep completed lines
         function sweep() {
                 let rowsCleared = 0;
@@ -1961,9 +1996,9 @@ function gameLoop() {
                 // Remove any visual effects
                 canvas.style.filter = 'none';
                 break;
-            case 'SLOW_DOWN':
-                // Restore original game speed (if there was a gameSpeed variable)
-                if (powerUp.originalSpeed !== undefined) {
+                case 'SLOW_DOWN':
+                // Restore original game speed
+                if (powerUp && powerUp.originalSpeed !== undefined) {
                     gameSpeed = powerUp.originalSpeed;
                 }
                 break;
