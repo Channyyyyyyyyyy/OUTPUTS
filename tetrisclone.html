@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuzzleBound</title>
+    <style>
+        /* Color Variables */
+        :root {
+            --bg-gradient-1: #6200EA; 
+            --bg-gradient-2: #B620E0;
+            --bg-gradient-3: #F50057;
+            --primary: #00E5FF;
+            --secondary: #76FF03;
+            --accent: #FFD600;
+            --dark-bg: #121212;
+            --panel-bg: rgba(18, 18, 18, 0.8);
+            --text: #FFFFFF;
+            --shadow-color: rgba(0, 229, 255, 0.6);
+        }
+        
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3));
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+            color: var(--text);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 20px;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--shadow-color);
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        
+        .game-container {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            flex-direction: row !important;
+        }
+        
+        canvas {
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            box-shadow: 0 0 25px var(--shadow-color);
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .side-panel {
+            display: flex;
+            flex-direction: column !important;
+            gap: 15px;
+            width: 180px;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+        }
+        
+        .info-box {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 15px var(--shadow-color);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .info-box:hover {
+            box-shadow: 0 0 20px var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .next-piece, .hold-piece {
+            height: 150px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .next-piece canvas, .hold-piece canvas {
+            position: relative;
+            margin-top: 10px;
+            border: 2px solid var(--accent);
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: var(--secondary);
+            font-size: 12px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        .controls-box {
+            margin-top: 15px;
+        }
+        
+        .controls-box p {
+            margin: 5px 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .power-up {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, var(--accent), #FF9100);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            box-shadow: 0 0 15px rgba(255, 214, 0, 0.8);
+            animation: pulsate 1.5s infinite alternate;
+        }
+        
+        @keyframes pulsate {
+            0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 214, 0, 0.7); }
+            100% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 214, 0, 0.9); }
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(40, 40, 40, 0.95));
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px var(--shadow-color);
+        }
+        
+        .game-over h2 {
+            color: #FF1744;
+            margin-top: 0;
+            text-shadow: 0 0 10px rgba(255, 23, 68, 0.7);
+            font-size: 2rem;
+        }
+        
+        .game-over button {
+            background: linear-gradient(to right, var(--primary), #64FFDA);
+            border: none;
+            color: #000;
+            padding: 12px 24px;
+            margin-top: 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+        }
+        
+        .game-over button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.6);
+        }
+        
+        .game-over button:active {
+            transform: translateY(-1px);
+        }
+        
+        .game-btn.restart-btn {
+            background: linear-gradient(to right, #00E676, #1DE9B6);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.6);
+        }
+        
+        .game-btn.restart-btn:hover {
+            background: linear-gradient(to right, #00C853, #00BFA5);
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.8);
+        }
+        
+        .game-btn.quit-btn {
+            background: linear-gradient(to right, #FF5252, #FF1744);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.6);
+        }
+        
+        .game-btn.quit-btn:hover {
+            background: linear-gradient(to right, #FF1744, #D50000);
+            box-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
+        }
+        
+        .active-power-ups {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .active-power-up {
+            background: linear-gradient(to right, rgba(255, 214, 0, 0.2), rgba(255, 145, 0, 0.2));
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(3px);
+            box-shadow: 0 0 10px rgba(255, 214, 0, 0.3);
+        }
+        
+        .active-power-up-timer {
+            margin-left: 10px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .power-up-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to right, rgba(255, 214, 0, 0.9), rgba(255, 145, 0, 0.9));
+            color: #000;
+            padding: 18px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 0 25px rgba(255, 214, 0, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .line-pop {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5));
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            animation: pop-animation 0.6s ease-out forwards;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+        
+        @keyframes pop-animation {
+            0% { transform: scale(0); opacity: 0.9; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        
+        /* Start screen and buttons */
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(50, 0, 90, 0.8));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        
+        .game-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .game-btn {
+            background: linear-gradient(to right, var(--primary), #64FFDA);
+            border: none;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.6);
+        }
+        
+        .game-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .game-btn.pause-btn {
+            background: linear-gradient(to right, #FFAB00, #FF6D00);
+            box-shadow: 0 5px 15px rgba(255, 171, 0, 0.5);
+        }
+        
+        .game-btn.pause-btn:hover {
+            background: linear-gradient(to right, #FF9100, #FF6D00);
+            box-shadow: 0 8px 20px rgba(255, 171, 0, 0.7);
+        }
+        
+        .start-screen .logo {
+            font-size: 3.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 25px;
+            text-shadow: 0 5px 15px rgba(0, 229, 255, 0.5);
+            animation: glow 2s infinite alternate;
+            font-weight: bold;
+            letter-spacing: 4px;
+        }
+        
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+            100% { text-shadow: 0 0 30px rgba(0, 229, 255, 0.9), 0 0 50px rgba(0, 229, 255, 0.5); }
+        }
+        
+        /* Leaderboard Styles */
+        .leaderboard {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            width: 200px;
+            margin-top: 20px;
+            box-shadow: 0 0 15px var(--shadow-color);
+            backdrop-filter: blur(5px);
+        }
+        
+        .leaderboard h3 {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+        
+        .leaderboard-rank {
+            color: var(--accent);
+            font-weight: bold;
+            margin-right: 10px;
+            text-shadow: 0 0 5px rgba(255, 214, 0, 0.5);
+        }
+        
+        .leaderboard-name {
+            flex-grow: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .leaderboard-score {
+            font-weight: bold;
+            color: var(--primary);
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+        }
+        
+        /* High Score Input Styles */
+        .high-score-input {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(40, 40, 40, 0.95));
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 11;
+            border: 2px solid var(--primary);
+            display: none;
+            box-shadow: 0 0 30px var(--shadow-color);
+            backdrop-filter: blur(10px);
+        }
+        
+        .high-score-input h2 {
+            background: linear-gradient(to right, var(--accent), #FF9100);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-top: 0;
+            font-size: 1.8rem;
+        }
+        
+        .high-score-input p {
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .high-score-input input {
+            padding: 12px;
+            width: 80%;
+            border-radius: 50px;
+            border: 2px solid var(--primary);
+            background-color: rgba(18, 18, 18, 0.7);
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .high-score-input input:focus {
+            outline: none;
+            box-shadow: 0 0 20px var(--primary);
+            border-color: var(--secondary);
+        }
+        
+        /* Media query for smaller screens - KEEPING THE SAME LAYOUT SIZE AS REQUESTED */
+        @media (max-width: 1000px) {
+            .game-container {
+                flex-direction: column !important;
+                align-items: center;
+            }
+            .side-panel {
+                margin-top: 20px;
+                width: 300px; /* Match game width on mobile */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .next-piece, .hold-piece {
+                grid-column: span 2;
+            }
+            .controls-box {
+                grid-column: span 2;
+            }
+            .game-buttons {
+                margin-bottom: 15px;
+            }
+            .leaderboard {
+                width: 300px;
+                margin-top: 15px;
+            }
+        }
+    </style>
+    
+    </head>
+    <body>
+        <header>
+            <h1>PuzzleBound</h1>
+        </header>
+        
+        <div class="game-buttons">
+            <button id="startButton" class="game-btn">Start Game</button>
+            <button id="restartButton" class="game-btn restart-btn">Restart</button>
+            <button id="pauseButton" class="game-btn pause-btn">Pause</button>
+            <button id="quitButton" class="game-btn quit-btn">Quit</button>
+            <button id="showLeaderboardButton" class="game-btn">Leaderboard</button>
+        </div>
+        
+        <div class="game-container">
+            <canvas id="gameCanvas" width="300" height="600"></canvas>
+            
+            <div id="startScreen" class="start-screen">
+                <div class="logo">PuzzleBound</div>
+                <button id="startScreenButton" class="game-btn">Start Game</button>
+                <div id="startLeaderboard" class="leaderboard" style="margin-top: 20px;">
+                    <h3>LEADERBOARD</h3>
+                    <ul class="leaderboard-list" id="startLeaderboardList">
+                        <!-- Leaderboard items will be populated here -->
+                    </ul>
+                </div>
+            </div>
+            
+            
+            <div class="side-panel">
+                <div class="info-box hold-piece">
+                    <h3>HOLD</h3>
+                    <canvas id="holdPieceCanvas" width="120" height="120"></canvas>
+                </div>
+
+                <div class="info-box next-piece">
+                    <h3>NEXT</h3>
+                    <canvas id="nextPieceCanvas" width="120" height="120"></canvas>
+                </div>
+                
+                <div class="info-box">
+                    <h3>SCORE</h3>
+                    <p id="score">0</p>
+                </div>
+                
+                <div class="info-box">
+                    <h3>LEVEL</h3>
+                    <p id="level">1</p>
+                </div>
+                
+                <div class="info-box">
+                    <h3>LINES</h3>
+                    <p id="lines">0</p>
+                </div>
+                
+                <div class="controls-box info-box">
+                    <h3>CONTROLS</h3>
+                    <p>← → : Move</p>
+                    <p>↑ : Rotate</p>
+                    <p>↓ : Soft Drop</p>
+                    <p>SPACE : Hard Drop</p>
+                    <p>C : Hold Piece</p>
+                    <p>P : Pause</p>
+                </div>
+            </div>
+            
+            <div id="activePowerUps" class="active-power-ups"></div>
+            <div id="powerUpNotification" class="power-up-notification"></div>
+            
+            <div id="gameOver" class="game-over">
+                <h2>GAME OVER</h2>
+                <p>Your score: <span id="finalScore">0</span></p>
+                <button id="gameOverRestartButton" class="game-btn">Play Again</button>
+                <button id="gameOverQuitButton" class="game-btn quit-btn" style="margin-top: 10px;">Quit to Menu</button>
+            </div>
+            
+            <div id="highScoreInput" class="high-score-input">
+                <h2>NEW HIGH SCORE!</h2>
+                <p>Your score: <span id="highScoreValue">0</span></p>
+                <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="10">
+                <button id="saveScoreButton" class="game-btn">Save Score</button>
+            </div>
+        </div>
+        
+        <div id="leaderboardDisplay" class="leaderboard">
+            <h3>LEADERBOARD</h3>
+            <ul class="leaderboard-list" id="leaderboardList">
+                <!-- Leaderboard items will be populated here -->
+            </ul>
+        </div>
+
+        <script>
+            // Game Constants and Variables
+            const COLS = 10;
+            const ROWS = 20;
+            const BLOCK_SIZE = 30;
+            const COLORS = [
+                null,
+                '#FF0D72', // I
+                '#0DC2FF', // J
+                '#0DFF72', // L
+                '#F538FF', // O
+                '#FF8E0D', // S
+                '#FFE138', // T
+                '#3877FF'  // Z
+            ];
+
+            // Tetrimino shapes
+            const SHAPES = [
+                null,
+                [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // I
+                [[2,0,0], [2,2,2], [0,0,0]],                  // J
+                [[0,0,3], [3,3,3], [0,0,0]],                  // L
+                [[0,4,4], [0,4,4], [0,0,0]],                  // O
+                [[0,5,5], [5,5,0], [0,0,0]],                  // S
+                [[0,6,0], [6,6,6], [0,0,0]],                  // T
+                [[7,7,0], [0,7,7], [0,0,0]]                   // Z
+            ];
+
+            // Power-up types
+            const POWER_UPS = {
+                CLEAR_ROW: {
+                    symbol: 'C', 
+                    effect: 'Clears a row',
+                    color: '#FF5733',
+                    duration: null // Instant effect
+                },
+                SLOW_DOWN: {
+                    symbol: 'S', 
+                    effect: 'Slows down falling pieces',
+                    color: '#33A1FF',
+                    duration: 15000 // 15 seconds
+                },
+                MULTI_CLEAR: {
+                    symbol: 'M', 
+                    effect: 'Next line clear affects multiple rows',
+                    color: '#33FF57',
+                    duration: 30000 // 30 seconds
+                },
+                TIME_FREEZE: {
+                    symbol: 'T', 
+                    effect: 'Temporarily freezes piece movement',
+                    color: '#A833FF',
+                    duration: 5000 // 5 seconds
+                }
+            };
+
+            // Game variables
+            let canvas = document.getElementById('gameCanvas');
+            let ctx = canvas.getContext('2d');
+            let nextPieceCanvas = document.getElementById('nextPieceCanvas');
+            let nextPieceCtx = nextPieceCanvas.getContext('2d');
+            let holdPieceCanvas = document.getElementById('holdPieceCanvas');
+            let holdPieceCtx = holdPieceCanvas.getContext('2d');
+            let scoreElement = document.getElementById('score');
+            let levelElement = document.getElementById('level');
+            let linesElement = document.getElementById('lines');
+            let gameOverPanel = document.getElementById('gameOver');
+            let finalScoreElement = document.getElementById('finalScore');
+            let restartButton = document.getElementById('restartButton');
+            let quitButton = document.getElementById('quitButton');
+            let gameOverRestartButton = document.getElementById('gameOverRestartButton');
+            let gameOverQuitButton = document.getElementById('gameOverQuitButton');
+            let activePowerUpsElement = document.getElementById('activePowerUps');
+            let powerUpNotificationElement = document.getElementById('powerUpNotification');
+            let startScreenElement = document.getElementById('startScreen');
+            let startButton = document.getElementById('startButton');
+            let startScreenButton = document.getElementById('startScreenButton');
+            let pauseButton = document.getElementById('pauseButton');
+            let showLeaderboardButton = document.getElementById('showLeaderboardButton');
+            let leaderboardDisplay = document.getElementById('leaderboardDisplay');
+            let leaderboardList = document.getElementById('leaderboardList');
+            let startLeaderboardList = document.getElementById('startLeaderboardList');
+            let highScoreInput = document.getElementById('highScoreInput');
+            let highScoreValue = document.getElementById('highScoreValue');
+            let playerNameInput = document.getElementById('playerNameInput');
+            let saveScoreButton = document.getElementById('saveScoreButton');
+
+            let board = createMatrix(COLS, ROWS);
+            let score = 0;
+            let level = 1;
+            let lines = 0;
+            let dropCounter = 0;
+            let dropInterval = 1000; // Initial drop speed (ms)
+            let originalDropInterval = 1000;
+            let lastTime = 0;
+            let gameOver = false;
+            let isPaused = false;
+            let gameStarted = false;
+            let powerUpChance = 0.15; // 15% chance for power-up
+            let powerUps = [];
+            let activePowerUps = {}; // Track active power-ups with timers
+            let comboCount = 0; // Track combo counter for consecutive line clears
+            let lastClearTime = 0; // Time of last line clear for combo tracking
+            let lineClearEffects = []; // Track line clear animation effects
+            let animationId = null; // Store animation frame ID for pausing
+            let leaderboard = []; // Array to store leaderboard entries
+            let isHighScore = false; // Flag to track if current score is a high score
+
+            let player = {
+                pos: {x: 0, y: 0},
+                matrix: null,
+                next: getRandomPiece(),
+                hold: null,
+                canHold: true
+            };
+
+            // Initialize the game
+            function init() {
+        board = createMatrix(COLS, ROWS);
+        score = 0;
+        level = 1;
+        lines = 0;
+        dropInterval = 1000;
+        originalDropInterval = 1000;
+        gameOver = false;
+        isPaused = false;
+        
+        // Clear all power-ups
+        powerUps = [];
+        
+        // Clear active power-up displays
+        activePowerUpsElement.innerHTML = '';
+        
+        // Clear active power-ups
+        for (let type in activePowerUps) {
+            if (activePowerUps[type] && activePowerUps[type].element) {
+                if (activePowerUps[type].element.parentNode) {
+                    activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                }
+            }
+        }
+        activePowerUps = {};
+        
+        comboCount = 0;
+        lineClearEffects = [];
+        isHighScore = false;
+        
+        updateScore(0);
+        updateLevel(1);
+        updateLines(0);
+        
+        player.matrix = player.next;
+        player.next = getRandomPiece();
+        player.hold = null;
+        player.canHold = true;
+        playerReset();
+        
+        gameOverPanel.style.display = 'none';
+        highScoreInput.style.display = 'none';
+        
+        // Initial draw of the game board
+        draw();
+        // Initialize hold piece canvas
+        drawHoldPiece();
+    }
+
+            // Load leaderboard from localStorage
+            function loadLeaderboard() {
+                const savedLeaderboard = localStorage.getItem('puzzleBoundLeaderboard');
+                if (savedLeaderboard) {
+                    leaderboard = JSON.parse(savedLeaderboard);
+                } else {
+                    // Default leaderboard with placeholder entries
+                    leaderboard = [
+                        { name: "TETRIS", score: 10000 },
+                        { name: "MASTER", score: 8000 },
+                        { name: "PUZZLE", score: 6000 },
+                        { name: "PLAYER", score: 4000 },
+                        { name: "NEWBIE", score: 2000 }
+                    ];
+                    saveLeaderboard();
+                }
+                updateLeaderboardDisplay();
+            }
+
+            // Save leaderboard to localStorage
+            function saveLeaderboard() {
+                localStorage.setItem('puzzleBoundLeaderboard', JSON.stringify(leaderboard));
+            }
+
+            // Update the leaderboard display
+            function updateLeaderboardDisplay() {
+                // Sort leaderboard by score (highest first)
+                leaderboard.sort((a, b) => b.score - a.score);
+                
+                // Limit to top 5
+                leaderboard = leaderboard.slice(0, 5);
+                
+                // Clear existing entries
+                leaderboardList.innerHTML = '';
+                startLeaderboardList.innerHTML = '';
+                
+                // Add entries to both leaderboard displays
+                leaderboard.forEach((entry, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'leaderboard-item';
+                    listItem.innerHTML = `
+                        <span class="leaderboard-rank">#${index + 1}</span>
+                        <span class="leaderboard-name">${entry.name}</span>
+                        <span class="leaderboard-score">${entry.score}</span>
+                    `;
+                    
+                    // Create a clone for the start screen leaderboard
+                    const startListItem = listItem.cloneNode(true);
+                    
+                    leaderboardList.appendChild(listItem);
+                    startLeaderboardList.appendChild(startListItem);
+                });
+            }
+
+            // Check if the current score is a high score
+            function checkHighScore() {
+                if (leaderboard.length < 5 || score > leaderboard[leaderboard.length - 1].score) {
+                    return true;
+                }
+                return false;
+            }
+
+            // Show high score input form
+            function showHighScoreInput() {
+                highScoreValue.textContent = score;
+                highScoreInput.style.display = 'block';
+                playerNameInput.focus();
+            }
+
+            // Save the high score
+            function saveHighScore() {
+                const playerName = playerNameInput.value.trim() || 'Player';
+                
+                // Add the new score
+                leaderboard.push({
+                    name: playerName,
+                    score: score
+                });
+                
+                // Sort and limit to top 5
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard = leaderboard.slice(0, 5);
+                
+                // Save to localStorage
+                saveLeaderboard();
+                
+                // Update the display
+                updateLeaderboardDisplay();
+                
+                // Hide the input form
+                highScoreInput.style.display = 'none';
+                
+                // Show game over screen
+                gameOverPanel.style.display = 'block';
+            }
+
+            // Start the game
+            function startGame() {
+                if (!gameStarted || gameOver) {
+                    gameStarted = true;
+                    gameOver = false;
+                    isPaused = false;
+                    startScreenElement.style.display = 'none';
+                    pauseButton.textContent = 'Pause';
+                    init();
+                    lastTime = performance.now();
+                    cancelAnimationFrame(animationId); // Cancel any existing animation
+                    update(); // Start the game loop
+                } else if (isPaused) {
+                    // Resume the game if it was paused
+                    isPaused = false;
+                    pauseButton.textContent = 'Pause';
+                    lastTime = performance.now();
+                    update();
+                }
+            }
+
+            // Toggle pause state
+             // Toggle pause state
+        function togglePause() {
+            if (!gameStarted || gameOver) return;
+            
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+            
+            if (!isPaused) {
+                lastTime = performance.now();
+                update();
+            } else {
+                // Show pause message on canvas
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.font = 'bold 30px Arial';
+                ctx.fillStyle = '#4d9bff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+                
+                ctx.font = '16px Arial';
+                ctx.fillText('Press Resume to continue', canvas.width / 2, canvas.height / 2 + 40);
+            }
+        }
+
+        // Restart game
+        function restartGame() {
+            gameStarted = true;
+            gameOver = false;
+            isPaused = false;
+            pauseButton.textContent = 'Pause';
+            init();
+            lastTime = performance.now();
+            cancelAnimationFrame(animationId);
+            update();
+        }
+
+        // Quit to main menu
+        function quitToMenu() {
+            gameStarted = false;
+            gameOver = false;
+            isPaused = false;
+            startScreenElement.style.display = 'flex';
+            gameOverPanel.style.display = 'none';
+            highScoreInput.style.display = 'none';
+            cancelAnimationFrame(animationId);
+            // Update leaderboard display on start screen
+            updateLeaderboardDisplay();
+        }
+
+
+            // Toggle leaderboard visibility
+            function toggleLeaderboard() {
+                if (leaderboardDisplay.style.display === 'none') {
+                    leaderboardDisplay.style.display = 'block';
+                    updateLeaderboardDisplay();
+                } else {
+                    leaderboardDisplay.style.display = 'none';
+                }
+            }
+
+            // Create a matrix (2D array)
+            function createMatrix(w, h) {
+                const matrix = [];
+                while (h--) {
+                    matrix.push(new Array(w).fill(0));
+                }
+                return matrix;
+            }
+
+            // Get a random piece
+            function getRandomPiece() {
+                const pieceType = Math.floor(Math.random() * 7) + 1;
+                return SHAPES[pieceType];
+            }
+
+            // Reset player position
+            function playerReset() {
+        player.matrix = player.next;
+        player.next = getRandomPiece();
+        player.pos.y = 0;
+        player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+        player.canHold = true;
+        
+        drawNextPiece();
+        
+        // Check if game over: If the piece overlaps with existing blocks
+        if (checkCollision()) {
+            gameOver = true;
+            finalScoreElement.textContent = score;
+            
+            // Check if this is a high score
+            isHighScore = checkHighScore();
+            
+            if (isHighScore) {
+                showHighScoreInput();
+            } else {
+                gameOverPanel.style.display = 'block';
+            }
+        }
+        
+        // Randomly spawn a power-up with probability that increases with level
+        const spawnProbability = powerUpChance + (level * 0.01);
+        if (Math.random() < spawnProbability) {
+            spawnPowerUp();
+        }
+    }
+    // Hold the current piece
+    function holdPiece() {
+            if (!player.canHold) return;
+            
+            if (player.hold === null) {
+                player.hold = player.matrix;
+                player.matrix = player.next;
+                player.next = getRandomPiece();
+                drawNextPiece();
+            } else {
+                const temp = player.matrix;
+                player.matrix = player.hold;
+                player.hold = temp;
+            }
+            
+            // Reset position
+            player.pos.y = 0;
+            player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+            player.canHold = false;
+            
+            drawHoldPiece();
+        }
+
+        // Draw the hold piece
+        function drawHoldPiece() {
+            holdPieceCtx.clearRect(0, 0, holdPieceCanvas.width, holdPieceCanvas.height);
+            
+            if (player.hold === null) return;
+            
+            // Center the piece in the canvas
+            const offsetX = (holdPieceCanvas.width - player.hold[0].length * BLOCK_SIZE) / 2;
+            const offsetY = (holdPieceCanvas.height - player.hold.length * BLOCK_SIZE) / 2;
+            
+            player.hold.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        holdPieceCtx.fillStyle = COLORS[value];
+                        holdPieceCtx.fillRect(offsetX + x * BLOCK_SIZE, offsetY + y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                        
+                        // Add shading for 3D effect
+                        holdPieceCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        holdPieceCtx.fillRect(offsetX + x * BLOCK_SIZE, offsetY + y * BLOCK_SIZE, BLOCK_SIZE - 1, 5);
+                        holdPieceCtx.fillRect(offsetX + x * BLOCK_SIZE, offsetY + y * BLOCK_SIZE, 5, BLOCK_SIZE - 1);
+                        
+                        holdPieceCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        holdPieceCtx.fillRect(offsetX + x * BLOCK_SIZE + BLOCK_SIZE - 6, offsetY + y * BLOCK_SIZE, 5, BLOCK_SIZE - 1);
+                        holdPieceCtx.fillRect(offsetX + x * BLOCK_SIZE, offsetY + y * BLOCK_SIZE + BLOCK_SIZE - 6, BLOCK_SIZE - 1, 5);
+                    }
+                });
+            });
+        }
+
+            // Draw the next piece preview with larger size
+            function drawNextPiece() {
+                nextPieceCtx.clearRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
+                nextPieceCtx.fillStyle = '#2a2a2a';
+                nextPieceCtx.fillRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
+                
+                const matrix = player.next;
+                const blockSizeNext = 25; // Slightly smaller than main blocks but larger than before
+                const offset = {
+                    x: (nextPieceCanvas.width / 2) - (matrix[0].length * blockSizeNext / 2),
+                    y: (nextPieceCanvas.height / 2) - (matrix.length * blockSizeNext / 2)
+                };
+                
+                matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            nextPieceCtx.fillStyle = COLORS[value];
+                            nextPieceCtx.fillRect(
+                                x * blockSizeNext + offset.x,
+                                y * blockSizeNext + offset.y,
+                                blockSizeNext - 1,
+                                blockSizeNext - 1
+                            );
+                            
+                            // Add highlight for 3D effect
+                            nextPieceCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                            nextPieceCtx.fillRect(
+                                x * blockSizeNext + offset.x,
+                                y * blockSizeNext + offset.y,
+                                blockSizeNext - 1,
+                                3
+                            );
+                            nextPieceCtx.fillRect(
+                                x * blockSizeNext + offset.x,
+                                y * blockSizeNext + offset.y,
+                                3,
+                                blockSizeNext - 1
+                            );
+                            
+                            // Add shadow for 3D effect
+                            nextPieceCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                            nextPieceCtx.fillRect(
+                                x * blockSizeNext + offset.x + blockSizeNext - 4,
+                                y * blockSizeNext + offset.y,
+                                3,
+                                blockSizeNext - 1
+                            );
+                            nextPieceCtx.fillRect(
+                                x * blockSizeNext + offset.x,
+                                y * blockSizeNext + offset.y + blockSizeNext - 4,
+                                blockSizeNext - 1,
+                                3
+                            );
+                        }
+                    });
+                });
+            }
+
+            // Draw the game board
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background grid
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw grid lines
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 0.5;
+                
+                // Draw vertical lines
+                for (let i = 0; i <= COLS; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * BLOCK_SIZE, 0);
+                    ctx.lineTo(i * BLOCK_SIZE, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // Draw horizontal lines
+                for (let i = 0; i <= ROWS; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * BLOCK_SIZE);
+                    ctx.lineTo(canvas.width, i * BLOCK_SIZE);
+                    ctx.stroke();
+                }
+                
+                // Draw the placed blocks on the board
+                drawMatrix(board, {x: 0, y: 0});
+                
+                // Draw power-ups
+                drawPowerUps();
+                
+                // Draw the current piece
+                drawMatrix(player.matrix, player.pos);
+                
+                // Draw the ghost piece (landing preview)
+                drawGhostPiece();
+                
+                // Draw line clear effects
+                drawLineClearEffects();
+            }
+
+            // Draw a matrix on the canvas
+            function drawMatrix(matrix, offset) {
+                matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            ctx.fillStyle = COLORS[value];
+                            ctx.fillRect(
+                                (x + offset.x) * BLOCK_SIZE,
+                                (y + offset.y) * BLOCK_SIZE,
+                                BLOCK_SIZE - 1,
+                                BLOCK_SIZE - 1
+                            );
+                            
+                            // Add highlight for 3D effect
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                            ctx.fillRect(
+                                (x + offset.x) * BLOCK_SIZE,
+                                (y + offset.y) * BLOCK_SIZE,
+                                BLOCK_SIZE - 1,
+                                4
+                            );
+                            ctx.fillRect(
+                                (x + offset.x) * BLOCK_SIZE,
+                                (y + offset.y) * BLOCK_SIZE,
+                                4,
+                                BLOCK_SIZE - 1
+                            );
+                            
+                            // Add shadow for 3D effect
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                            ctx.fillRect(
+                                (x + offset.x) * BLOCK_SIZE + BLOCK_SIZE - 5,
+                                (y + offset.y) * BLOCK_SIZE,
+                                4,
+                                BLOCK_SIZE - 1
+                            );
+                            ctx.fillRect(
+                                (x + offset.x) * BLOCK_SIZE,
+                                (y + offset.y) * BLOCK_SIZE + BLOCK_SIZE - 5,
+                                BLOCK_SIZE - 1,
+                                4
+                            );
+                        }
+                    });
+                });
+            }
+
+            // Draw ghost piece (landing preview)
+            function drawGhostPiece() {
+                const ghostPos = {x: player.pos.x, y: player.pos.y};
+                
+                // Move the ghost down until collision
+                while (!checkCollision(player.matrix, {x: ghostPos.x, y: ghostPos.y + 1})) {
+                    ghostPos.y++;
+                }
+                
+                // Draw ghost piece only if it's not at the same position as the actual piece
+                if (ghostPos.y !== player.pos.y) {
+                    player.matrix.forEach((row, y) => {
+                        row.forEach((value, x) => {
+                            if (value !== 0) {
+                                // Semi-transparent version of the piece
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                                ctx.fillRect(
+                                    (x + ghostPos.x) * BLOCK_SIZE,
+                                    (y + ghostPos.y) * BLOCK_SIZE,
+                                    BLOCK_SIZE - 1,
+                                    BLOCK_SIZE - 1
+                                );
+                                
+                                // Ghost piece outline
+                                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                                ctx.strokeRect(
+                                    (x + ghostPos.x) * BLOCK_SIZE,
+                                    (y + ghostPos.y) * BLOCK_SIZE,
+                                    BLOCK_SIZE - 1,
+                                    BLOCK_SIZE - 1
+                                );
+                            }
+                        });
+                    });
+                }
+            }
+
+            // Draw power-ups on the board
+            function drawPowerUps() {
+        const currentTime = performance.now();
+        
+        powerUps.forEach(powerUp => {
+            // Create pulsing effect
+            const pulseScale = 1 + 0.1 * Math.sin(currentTime / 300);
+            const baseSize = BLOCK_SIZE / 2 - 2;
+            const pulsedSize = baseSize * pulseScale;
+            
+            // Add shadow glow
+            ctx.shadowColor = POWER_UPS[powerUp.type].color;
+            ctx.shadowBlur = 15;
+            
+            // Draw outer glow
+            ctx.fillStyle = POWER_UPS[powerUp.type].color + '80'; // Semi-transparent
+            ctx.beginPath();
+            ctx.arc(
+                (powerUp.x + 0.5) * BLOCK_SIZE,
+                (powerUp.y + 0.5) * BLOCK_SIZE,
+                pulsedSize + 5,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Draw main power-up circle
+            ctx.fillStyle = POWER_UPS[powerUp.type].color;
+            ctx.beginPath();
+            ctx.arc(
+                (powerUp.x + 0.5) * BLOCK_SIZE,
+                (powerUp.y + 0.5) * BLOCK_SIZE,
+                pulsedSize,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Reset shadow for text
+            ctx.shadowBlur = 0;
+            
+            // Add symbol with enhanced text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                POWER_UPS[powerUp.type].symbol,
+                (powerUp.x + 0.5) * BLOCK_SIZE,
+                (powerUp.y + 0.5) * BLOCK_SIZE
+            );
+            
+            // Add sparkle effect (small dots around power-up)
+            if (Math.random() > 0.7) {
+                const sparkleAngle = Math.random() * Math.PI * 2;
+                const sparkleDistance = baseSize * 1.5;
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(
+                    (powerUp.x + 0.5) * BLOCK_SIZE + Math.cos(sparkleAngle) * sparkleDistance,
+                    (powerUp.y + 0.5) * BLOCK_SIZE + Math.sin(sparkleAngle) * sparkleDistance,
+                    2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+        });
+    }
+
+            // Draw line clear effects
+            function drawLineClearEffects() {
+                lineClearEffects.forEach((effect, index) => {
+                    ctx.beginPath();
+                    ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${effect.opacity})`;
+                    ctx.fill();
+                    
+                    // Update effect
+                    effect.radius += 5;
+                    effect.opacity -= 0.05;
+                    
+                    // Remove if faded out
+                    if (effect.opacity <= 0) {
+                        lineClearEffects.splice(index, 1);
+                    }
+                });
+            }
+
+            // Spawn a power-up on the board
+            function spawnPowerUp() {
+        // Get all available positions (empty cells)
+        const availablePositions = [];
+        board.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value === 0) {
+                    // Check if position already has a power-up
+                    const hasPowerUp = powerUps.some(pu => pu.x === x && pu.y === y);
+                    if (!hasPowerUp) {
+                        availablePositions.push({x, y});
+                    }
+                }
+            });
+        });
+        
+        // If there are available positions, spawn a power-up
+        if (availablePositions.length > 0) {
+            const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+            const powerUpTypes = Object.keys(POWER_UPS);
+            const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+            
+            // Also check if position conflicts with current falling piece
+            let pieceConflict = false;
+            for (let y = 0; y < player.matrix.length; y++) {
+                for (let x = 0; x < player.matrix[y].length; x++) {
+                    if (player.matrix[y][x] !== 0 && 
+                        player.pos.x + x === randomPos.x && 
+                        player.pos.y + y === randomPos.y) {
+                        pieceConflict = true;
+                        break;
+                    }
+                }
+                if (pieceConflict) break;
+            }
+            
+            // Only spawn if position is clear
+            if (!pieceConflict) {
+                powerUps.push({
+                    x: randomPos.x,
+                    y: randomPos.y,
+                    type: randomType
+                });
+            }
+        }
+    }
+
+            // Activate a power-up
+        function activatePowerUp(type) {
+        // Create more dramatic notification with animation
+        powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
+        powerUpNotificationElement.style.opacity = '1';
+        powerUpNotificationElement.style.backgroundColor = POWER_UPS[type].color;
+        powerUpNotificationElement.style.transform = 'scale(1.2)';
+        
+        // Add sound effect placeholder (you can add actual sounds later)
+        // console.log(`Playing power-up sound for: ${type}`);
+        
+        // Reset animation after a brief moment
+        setTimeout(() => {
+            powerUpNotificationElement.style.transform = 'scale(1)';
+        }, 200);
+        
+        // Hide notification after delay
+        setTimeout(() => {
+            powerUpNotificationElement.style.opacity = '0';
+        }, 2000);
+        
+        // Apply power-up effect with improvements
+        switch(type) {
+            case 'CLEAR_ROW':
+                // Clear a random row that has at least one block
+                let filledRows = [];
+                for (let y = 0; y < ROWS; y++) {
+                    let hasBlocks = false;
+                    for (let x = 0; x < COLS; x++) {
+                        if (board[y][x] !== 0) {
+                            hasBlocks = true;
+                            break;
+                        }
+                    }
+                    if (hasBlocks) {
+                        filledRows.push(y);
+                    }
+                }
+                
+                if (filledRows.length > 0) {
+                    // Select a random filled row
+                    const randomRow = filledRows[Math.floor(Math.random() * filledRows.length)];
+                    
+                    // Enhanced visual effect before clearing
+                    for (let x = 0; x < COLS; x++) {
+                        // Store original color
+                        const blockValue = board[randomRow][x];
+                        if (blockValue !== 0) {
+                            // Create special "about to clear" effect
+                            lineClearEffects.push({
+                                x: (x + 0.5) * BLOCK_SIZE,
+                                y: (randomRow + 0.5) * BLOCK_SIZE,
+                                radius: BLOCK_SIZE / 2,
+                                opacity: 1
+                            });
+                        }
+                    }
+                    
+                    // Delay the actual clearing for visual effect
+                    setTimeout(() => {
+                        // Clear the row
+                        for (let x = 0; x < COLS; x++) {
+                            board[randomRow][x] = 0;
+                        }
+                        
+                        // Create more dramatic clear effects
+                        for (let i = 0; i < 10; i++) {
+                            lineClearEffects.push({
+                                x: (Math.random() * COLS) * BLOCK_SIZE,
+                                y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
+                                radius: 5 + Math.random() * 10,
+                                opacity: 0.8
+                            });
+                        }
+                        
+                        // Move rows down
+                        for (let y = randomRow; y > 0; y--) {
+                            for (let x = 0; x < COLS; x++) {
+                                board[y][x] = board[y - 1][x];
+                            }
+                        }
+                        
+                        // Clear top row
+                        board[0].fill(0);
+                        
+                        // Update score and line count with bonus for power-up use
+                        updateScore(score + 150 * level); // Increased from 100 to 150
+                        updateLines(lines + 1);
+                    }, 100);
+                }
+                break;
+            
+                case 'SLOW_DOWN':
+    try {
+        if (activePowerUps[type]) {
+            // Power-up already active - just extend duration
+            clearTimeout(activePowerUps[type].timer);
+            
+            // Update display if it exists
+            if (activePowerUps[type].element) {
+                const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                if (timerElement) {
+                    timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                }
+            }
+            
+            // Set new expiration timer
+            activePowerUps[type].timer = setTimeout(() => {
+                try {
+                    // Restore original block speed
+                    blockSpeed = activePowerUps[type].originalBlockSpeed;
+                    
+                    // Apply speed to all existing blocks
+                    blocks.forEach(block => {
+                        block.speed = blockSpeed;
+                    });
+                    
+                    // Clean up
+                    removeActivePowerUpDisplay(type);
+                    delete activePowerUps[type];
+                } catch (error) {
+                    console.error("Error in slow-down expiration:", error);
+                }
+            }, POWER_UPS[type].duration);
+        } else {
+            // First activation - store current block speed before changing it
+            const currentBlockSpeed = blockSpeed || getDefaultBlockSpeed();
+            
+            activePowerUps[type] = {
+                startTime: performance.now(),
+                originalBlockSpeed: currentBlockSpeed, // Store current block speed
+                element: null
+            };
+            
+            // Apply the effect - reduce block speed by half
+            blockSpeed = currentBlockSpeed * 0.5;
+            
+            // Apply new speed to all existing blocks
+            blocks.forEach(block => {
+                block.speed = blockSpeed;
+            });
+            
+            // Set expiration timer
+            activePowerUps[type].timer = setTimeout(() => {
+                try {
+                    // Restore speed
+                    blockSpeed = activePowerUps[type].originalBlockSpeed;
+                    
+                    // Apply original speed to all existing blocks
+                    blocks.forEach(block => {
+                        block.speed = blockSpeed;
+                    });
+                    
+                    // Clean up
+                    removeActivePowerUpDisplay(type);
+                    delete activePowerUps[type];
+                } catch (error) {
+                    console.error("Error in slow-down expiration:", error);
+                }
+            }, POWER_UPS[type].duration);
+            
+            // Add visual indicator
+            activePowerUps[type].element = addActivePowerUpDisplay(type, POWER_UPS[type].duration);
+        }
+    } catch (error) {
+        console.error("Error in SLOW_DOWN power-up:", error);
+        // Fail gracefully - don't let an error stop the game
+    }
+    break;
+            
+            case 'MULTI_CLEAR':
+                // Improved multi-clear with visual indicator
+                if (activePowerUps[type]) {
+                    // If already active, extend the duration
+                    clearTimeout(activePowerUps[type].timer);
+                    activePowerUps[type].startTime = performance.now();
+                    
+                    // Update the display
+                    if (activePowerUps[type].element) {
+                        const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                        if (timerElement) {
+                            timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                        }
+                    }
+                    
+                    // Set new timeout
+                    activePowerUps[type].timer = setTimeout(() => {
+                        endPowerUpEffect(type);
+                    }, POWER_UPS[type].duration);
+                } else {
+                    // Add subtle board highlighting to indicate multi-clear is active
+                    canvas.style.boxShadow = `0 0 20px ${POWER_UPS[type].color}`;
+                    
+                    // Create new active power-up entry
+                    activePowerUps[type] = {
+                        startTime: performance.now(),
+                        duration: POWER_UPS[type].duration,
+                        element: createActivePowerUpElement(type),
+                        timer: null
+                    };
+                    
+                    // Set timer to end effect
+                    activePowerUps[type].timer = setTimeout(() => {
+                        endPowerUpEffect(type);
+                        // Remove board highlighting
+                        canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
+                    }, POWER_UPS[type].duration);
+                }
+                break;
+            
+            case 'TIME_FREEZE':
+                // Enhanced time freeze with visual effects
+                if (activePowerUps[type]) {
+                    // If already active, extend the duration
+                    clearTimeout(activePowerUps[type].timer);
+                    activePowerUps[type].startTime = performance.now();
+                    
+                    // Update the display
+                    if (activePowerUps[type].element) {
+                        const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                        if (timerElement) {
+                            timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                        }
+                    }
+                    
+                    // Set new timeout
+                    activePowerUps[type].timer = setTimeout(() => {
+                        endPowerUpEffect(type);
+                    }, POWER_UPS[type].duration);
+                } else {
+                    // Store original interval
+                    originalDropInterval = dropInterval;
+                    dropInterval = 9999999; // Effectively stop dropping
+                    
+                    // Add freeze visual effect
+                    canvas.style.filter = 'brightness(1.2) saturate(0.8)';
+                    
+                    // Create new active power-up entry
+                    activePowerUps[type] = {
+                        startTime: performance.now(),
+                        duration: POWER_UPS[type].duration,
+                        element: createActivePowerUpElement(type),
+                        timer: null
+                    };
+                    
+                    // Set timer to end effect
+                    activePowerUps[type].timer = setTimeout(() => {
+                        endPowerUpEffect(type);
+                        // Remove freeze visual effect
+                        canvas.style.filter = 'none';
+                    }, POWER_UPS[type].duration);
+                }
+                break;
+        }
+    }
+
+
+            // Create and add active power-up indicator
+            function createActivePowerUpElement(type) {
+        const element = document.createElement('div');
+        element.className = 'active-power-up';
+        element.style.backgroundColor = POWER_UPS[type].color + '33'; // Add transparency
+        element.style.borderColor = POWER_UPS[type].color;
+        
+        element.innerHTML = `
+            <span>${POWER_UPS[type].symbol}: ${POWER_UPS[type].effect}</span>
+            <span class="active-power-up-timer">${Math.ceil(POWER_UPS[type].duration / 1000)}s</span>
+        `;
+        activePowerUpsElement.appendChild(element);
+        
+        return element;
+    }
+
+
+            // Update active power-up timers
+            function updatePowerUpTimers(time) {
+        for (let type in activePowerUps) {
+            const powerUp = activePowerUps[type];
+            const timeLeft = Math.max(0, Math.ceil((powerUp.duration - (time - powerUp.startTime)) / 1000));
+            
+            const timerElement = powerUp.element.querySelector('.active-power-up-timer');
+            if (timerElement) {
+                timerElement.textContent = `${timeLeft}s`;
+            }
+            
+            // Clean up expired power-ups (as a safety check)
+            if (timeLeft <= 0) {
+                if (powerUp.element && powerUp.element.parentNode) {
+                    powerUp.element.parentNode.removeChild(powerUp.element);
+                }
+                delete activePowerUps[type];
+            }
+        }
+    }
+
+            // Check if the piece collides with walls or other pieces
+            function checkCollision(matrix = player.matrix, pos = player.pos) {
+                for (let y = 0; y < matrix.length; y++) {
+                    for (let x = 0; x < matrix[y].length; x++) {
+                        if (matrix[y][x] !== 0 &&
+                            (board[y + pos.y] === undefined ||
+                            board[y + pos.y][x + pos.x] === undefined ||
+                            board[y + pos.y][x + pos.x] !== 0)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            // Check if the player's piece collects a power-up
+            function checkPowerUpCollection() {
+        // Check each power-up against the current piece position
+        for (let i = powerUps.length - 1; i >= 0; i--) {
+            const powerUp = powerUps[i];
+            
+            // Check if any cell of the current piece overlaps with the power-up
+            let collected = false;
+            
+            for (let y = 0; y < player.matrix.length; y++) {
+                for (let x = 0; x < player.matrix[y].length; x++) {
+                    if (player.matrix[y][x] !== 0 &&
+                        player.pos.x + x === powerUp.x &&
+                        player.pos.y + y === powerUp.y) {
+                        
+                        collected = true;
+                        break;
+                    }
+                }
+                if (collected) break;
+            }
+            
+            if (collected) {
+                // Remove the power-up from the board
+                const collectedType = powerUp.type;
+                powerUps.splice(i, 1);
+                
+                // Activate the power-up effect
+                activatePowerUp(collectedType);
+                
+                // Add bonus score
+                updateScore(score + 50);
+            }
+        }
+    }
+    function getBlockSize(blockType) {
+    // Add handling for the "slow" power-up
+    if (blockType === "slow") {
+        // Return an appropriate size for the slow power-up
+        // Assuming it's a 1x1 block, but adjust as needed for your game
+        return { width: 1, height: 1 };
+    }
+    
+    // Original block size handling for other block types
+    switch(blockType) {
+        case "square":
+            return { width: 2, height: 2 };
+        case "line":
+            return { width: 1, height: 4 };
+        case "tBlock":
+            return { width: 3, height: 2 };
+        case "lBlock":
+            return { width: 2, height: 3 };
+        // Add other block types as needed
+        default:
+            // Safe fallback for any unknown block types
+            console.warn(`Unknown block type: ${blockType}`);
+            return { width: 1, height: 1 };
+    }
+}
+
+function checkAndClearBlocks() {
+    let blocksCleared = false;
+    
+    // Check each row for completely filled blocks
+    for (let row = 0; row < grid.length; row++) {
+        for (let col = 0; col < grid[row].length; col++) {
+            // Check if this block is the start of a filled area
+            if (grid[row][col] && isBlockFilled(row, col)) {
+                // Clear the entire filled area
+                clearFilledArea(row, col);
+                blocksCleared = true;
+            }
+        }
+    }
+    
+    // Return whether any blocks were cleared this check
+    return blocksCleared;
+}
+
+// Check if a block is completely filled (no empty cells)
+function isBlockFilled(startRow, startCol) {
+    const blockType = grid[startRow][startCol];
+    if (!blockType) return false;
+    
+    // Determine the boundaries of this block
+    const blockSize = getBlockSize(blockType);
+    
+    // Add safety check to prevent crashes
+    if (!blockSize || typeof blockSize.width !== 'number' || typeof blockSize.height !== 'number') {
+        console.error(`Invalid block size for type: ${blockType}`);
+        return false;
+    }
+    
+    // Check every cell in the block
+    for (let r = 0; r < blockSize.height; r++) {
+        for (let c = 0; c < blockSize.width; c++) {
+            const row = startRow + r;
+            const col = startCol + c;
+            
+            // If any cell is outside the grid or empty, the block is not filled
+            if (row >= grid.length || col >= grid[0].length || !grid[row][col]) {
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+// Clear a fully filled area and award points
+function clearFilledArea(startRow, startCol) {
+    const blockType = grid[startRow][startCol];
+    const blockSize = getBlockSize(blockType);
+    
+    // Add safety check to prevent crashes
+    if (!blockSize || typeof blockSize.width !== 'number' || typeof blockSize.height !== 'number') {
+        console.error(`Invalid block size for type: ${blockType}`);
+        return;
+    }
+    
+    // Clear all cells in the block
+    for (let r = 0; r < blockSize.height; r++) {
+        for (let c = 0; c < blockSize.width; c++) {
+            const row = startRow + r;
+            const col = startCol + c;
+            
+            // Check bounds before accessing grid
+            if (row < grid.length && col < grid[0].length) {
+                // Clear this cell
+                grid[row][col] = null;
+                
+                // Add visual effect for cleared block
+                addClearEffect(row, col);
+            }
+        }
+    }
+    
+    // Award points based on block size
+    score += blockSize.width * blockSize.height * POINTS_PER_CELL;
+    updateScore();
+}
+
+// Run the check after each block placement or at regular intervals in your game loop
+function gameLoop() {
+    // Other game logic...
+    
+    // Always check for and clear filled blocks
+    while(checkAndClearBlocks()) {
+        // Continue checking until no more blocks can be cleared
+        // This ensures cascading clears if removing one block makes another complete
+    }
+    
+    // More game logic...
+}
+
+            // Merge the player's piece with the board
+            function merge() {
+                player.matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            board[y + player.pos.y][x + player.pos.x] = value;
+                        }
+                    });
+                });
+            }
+
+            // Drop the piece
+            function playerDrop() {
+        player.pos.y++;
+        
+        // Check for collision
+        if (checkCollision()) {
+            player.pos.y--;
+            merge();
+            playerReset();
+            arenaSweep();
+        } else {
+            // Check for power-up collection during drop
+            checkPowerUpCollection();
+        }
+        
+        dropCounter = 0;
+    }
+
+
+            // Move the piece sideways
+            function playerMove(dir) {
+                player.pos.x += dir;
+                if (checkCollision()) {
+                    player.pos.x -= dir;
+                }
+            }
+
+            // Rotate the piece
+            function playerRotate() {
+                const pos = player.pos.x;
+                let offset = 1;
+                rotate(player.matrix);
+                
+                // Handle wall kicks
+                while (checkCollision()) {
+                    player.pos.x += offset;
+                    offset = -(offset + (offset > 0 ? 1 : -1));
+                    
+                    // If the rotation causes too many collisions, revert back
+                    if (offset > player.matrix[0].length) {
+                        rotate(player.matrix, -1); // Rotate back
+                        player.pos.x = pos;
+                        return;
+                    }
+                }
+            }
+
+            // Rotate a matrix
+            function rotate(matrix, dir = 1) {
+                // Transpose the matrix
+                for (let y = 0; y < matrix.length; y++) {
+                    for (let x = 0; x < y; x++) {
+                        [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+                    }
+                }
+                
+                // Reverse each row for clockwise rotation, or each column for counter-clockwise
+                if (dir > 0) {
+                    matrix.forEach(row => row.reverse());
+                } else {
+                    matrix.reverse();
+                }
+            }
+
+            // Hard drop the piece
+            function hardDrop() {
+        while (!checkCollision(player.matrix, {x: player.pos.x, y: player.pos.y + 1})) {
+            player.pos.y++;
+            updateScore(score + 1); // Add score for each cell dropped
+            
+            // Check for power-up collection during hard drop
+            checkPowerUpCollection();
+        }
+        
+        // Lock the piece and process
+        merge();
+        playerReset();
+        arenaSweep();
+        dropCounter = 0;
+    }
+
+
+        // Check and clear completed rows
+function arenaSweep() {
+    let rowsCleared = 0;
+    
+    // Check each row from bottom to top
+    for (let y = board.length - 1; y >= 0; y--) {
+        let rowComplete = true;
+        
+        // Check if every cell in the row is filled
+        for (let x = 0; x < board[y].length; x++) {
+            if (board[y][x] === 0) {
+                rowComplete = false;
+                break;
+            }
+        }
+        
+        // If row is complete, remove it
+        if (rowComplete) {
+            // Create clear effect before removing the row
+            for (let x = 0; x < COLS; x++) {
+                lineClearEffects.push({
+                    x: (x + 0.5) * BLOCK_SIZE,
+                    y: (y + 0.5) * BLOCK_SIZE,
+                    radius: 10,
+                    opacity: 1
+                });
+            }
+            
+            // Remove the row and add empty row at top
+            const row = board.splice(y, 1)[0].fill(0);
+            board.unshift(row);
+            
+            // Since we removed a row, we need to check the same y again
+            y++;
+            
+            rowsCleared++;
+        }
+    }
+    
+    // If no rows cleared, reset combo
+    if (rowsCleared === 0) {
+        comboCount = 0;
+        return;
+    }
+    
+    // Update combo count for consecutive line clears
+    const currentTime = performance.now();
+    if (currentTime - lastClearTime < 2000) {
+        comboCount++;
+    } else {
+        comboCount = 1;
+    }
+    lastClearTime = currentTime;
+    
+    // Check for multi-clear power-up
+    const multiClearActive = activePowerUps['MULTI_CLEAR'] !== undefined;
+    
+    // Calculate score based on rows cleared
+    let linesScore = 0;
+    switch (rowsCleared) {
+        case 1:
+            linesScore = 100 * level;
+            break;
+        case 2:
+            linesScore = 300 * level;
+            break;
+        case 3:
+            linesScore = 500 * level;
+            break;
+        case 4:
+            linesScore = 800 * level;  // Tetris (4 lines)
+            break;
+        default:
+            // More than 4 lines (could happen with power-ups)
+            linesScore = 1000 * level + ((rowsCleared - 4) * 200 * level);
+    }
+    
+    // Add combo bonus
+    if (comboCount > 1) {
+        linesScore += (comboCount * 50) * level;
+    }
+    
+    // Update score, lines cleared, and level
+    updateScore(score + linesScore);
+    updateLines(lines + rowsCleared);
+    
+    // Check if level up needed
+    const newLevel = Math.floor(lines / 10) + 1;
+    if (newLevel > level) {
+        updateLevel(newLevel);
+        
+        // Increase game speed with each level
+        dropInterval = originalDropInterval * Math.pow(0.8, level - 1);
+    }
+}
+        // Sweep completed lines
+        function sweep() {
+                let rowsCleared = 0;
+                let rowStart = 0;
+                let rowsToCheck = ROWS;
+                
+                outer: for (let y = rowStart; y < rowsToCheck; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (board[y][x] === 0) {
+                            continue outer;
+                        }
+                    }
+                    
+                    // Row is full, remove it
+                    const row = board.splice(y, 1)[0].fill(0);
+                    board.unshift(row);
+                    rowsCleared++;
+                    
+                    // Add visual effect
+                    addLineClearEffect(y);
+                    
+                    // Check for multi-clear power-up
+                    if (activePowerUps['MULTI_CLEAR'] && rowsCleared === 1) {
+                        // Clear additional rows below if possible
+                        const extraRows = Math.min(2, ROWS - y - 1);
+                        for (let i = 1; i <= extraRows; i++) {
+                            const extraRow = board.splice(y, 1)[0].fill(0);
+                            board.unshift(extraRow);
+                            rowsCleared++;
+                            addLineClearEffect(y + i);
+                        }
+                    }
+                }
+                
+                // Update score based on rows cleared
+                if (rowsCleared > 0) {
+                    // Check if this is a combo (consecutive line clears)
+                    const now = performance.now();
+                    if (now - lastClearTime < 5000) { // 5 seconds for combo
+                        comboCount++;
+                    } else {
+                        comboCount = 0;
+                    }
+                    lastClearTime = now;
+                    
+                    // Calculate score based on rows cleared and combo
+                    let points;
+                    switch (rowsCleared) {
+                        case 1:
+                            points = 100;
+                            break;
+                        case 2:
+                            points = 300;
+                            break;
+                        case 3:
+                            points = 500;
+                            break;
+                        case 4:
+                            points = 800; // Tetris!
+                            break;
+                        default:
+                            points = 1000 + (rowsCleared - 4) * 300; // Multi-clear bonus
+                    }
+                    
+                    // Combo bonus
+                    points += comboCount * 50;
+                    
+                    // Level bonus
+                    points *= level;
+                    
+                    updateScore(score + points);
+                    updateLines(lines + rowsCleared);
+                    
+                    // Level up every 10 lines
+                    if (Math.floor(lines / 10) > Math.floor((lines - rowsCleared) / 10)) {
+                        updateLevel(level + 1);
+                        // Increase game speed
+                        dropInterval = originalDropInterval = Math.max(100, 1000 - (level - 1) * 100);
+                    }
+                }
+            }
+
+    // Function to end power-up effect (to be used in the activatePowerUp function)
+    function endPowerUpEffect(type) {
+        const powerUp = activePowerUps[type];
+        if (!powerUp) return;
+        
+        // Clear the timer
+        if (powerUp.timer) {
+            clearTimeout(powerUp.timer);
+        }
+        
+        // Remove the display element
+        if (powerUp.element && powerUp.element.parentNode) {
+            powerUp.element.parentNode.removeChild(powerUp.element);
+        }
+        
+        // Handle specific cleanup for power-up types
+        switch(type) {
+            case 'TIME_FREEZE':
+                // Restore the original drop interval
+                dropInterval = originalDropInterval;
+                // Remove any visual effects
+                canvas.style.filter = 'none';
+                break;
+                case 'SLOW_DOWN':
+                // Restore original game speed
+                if (powerUp && powerUp.originalSpeed !== undefined) {
+                    gameSpeed = powerUp.originalSpeed;
+                }
+                break;
+            case 'MULTI_CLEAR':
+                // Remove board highlighting
+                canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
+                break;
+        }
+        
+        // Remove the power-up from active list
+        delete activePowerUps[type];
+    }
+
+    // Helper function to remove active power-up display (used in other functions)
+    function removeActivePowerUpDisplay(type) {
+        if (activePowerUps[type] && activePowerUps[type].element) {
+            if (activePowerUps[type].element.parentNode) {
+                activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+            }
+            activePowerUps[type].element = null;
+        }
+    }
+
+    // Helper function to add active power-up display (used in other functions)
+    function addActivePowerUpDisplay(type, duration) {
+        const element = document.createElement('div');
+        element.className = 'active-power-up';
+        element.style.backgroundColor = POWER_UPS[type].color + '33'; // Add transparency
+        element.style.borderColor = POWER_UPS[type].color;
+        
+        element.innerHTML = `
+            <span>${POWER_UPS[type].symbol}: ${POWER_UPS[type].effect}</span>
+            <span class="active-power-up-timer">${Math.ceil(duration / 1000)}s</span>
+        `;
+        activePowerUpsElement.appendChild(element);
+        
+        return element;
+    }
+
+            // Update the score display
+            function updateScore(newScore) {
+                score = newScore;
+                scoreElement.textContent = score;
+            }
+
+            // Update the level display
+            function updateLevel(newLevel) {
+                level = newLevel;
+                levelElement.textContent = level;
+            }
+
+            // Update the lines display
+            function updateLines(newLines) {
+                lines = newLines;
+                linesElement.textContent = lines;
+            }
+
+            // Main game update loop
+            function update(time = 0) {
+        if (gameOver || isPaused) return;
+        
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        
+        dropCounter += deltaTime;
+        
+        // Update power-up timers
+        updatePowerUpTimers(time);
+        
+        // Check for power-up collection every frame
+        checkPowerUpCollection();
+        
+        // Move piece down when drop counter exceeds interval
+        if (dropCounter > dropInterval) {
+            playerDrop();
+        }
+        
+        draw();
+        animationId = requestAnimationFrame(update);
+    }
+
+
+
+            // Event listeners
+            document.addEventListener('keydown', event => {
+    if (gameOver) return;
+    
+    // Handle input only if game is not paused (except for pause key)
+    if (!isPaused || event.key === 'p' || event.key === 'P') {
+        switch (event.key) {
+            case 'ArrowLeft':
+                event.preventDefault(); // Prevent page scrolling
+                playerMove(-1);
+                break;
+            case 'ArrowRight':
+                event.preventDefault(); // Prevent page scrolling
+                playerMove(1);
+                break;
+            case 'ArrowDown':
+                event.preventDefault(); // Prevent page scrolling
+                playerDrop();
+                break;
+            case 'ArrowUp':
+                event.preventDefault(); // Prevent page scrolling
+                playerRotate();
+                break;
+            case ' ':
+                event.preventDefault(); // Prevent page scrolling (spacebar)
+                hardDrop();
+                break;
+            case 'c':
+            case 'C':
+                holdPiece();
+                break;
+            case 'p':
+            case 'P':
+                togglePause();
+                break;
+        }
+    }
+});
+
+            // Button event listeners
+            startButton.addEventListener('click', startGame);
+            quitButton.addEventListener('click', quitToMenu);
+            gameOverRestartButton.addEventListener('click', restartGame);
+            gameOverQuitButton.addEventListener('click', quitToMenu);
+            startScreenButton.addEventListener('click', startGame);
+            pauseButton.addEventListener('click', togglePause);
+            restartButton.addEventListener('click', () => {
+                gameOverPanel.style.display = 'none';
+                startGame();
+            });
+            showLeaderboardButton.addEventListener('click', toggleLeaderboard);
+            saveScoreButton.addEventListener('click', saveHighScore);
+
+            // Load leaderboard on page load
+            loadLeaderboard();
+
+            // Show start screen initially
+            startScreenElement.style.display = 'flex';
+            leaderboardDisplay.style.display = 'none';
+        </script>
+    </body>
+    </html>
