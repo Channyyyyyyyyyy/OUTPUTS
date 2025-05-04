@@ -5,10 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PuzzleBound</title>
     <style>
+        /* Color Variables */
+        :root {
+            --bg-gradient-1: #6200EA; 
+            --bg-gradient-2: #B620E0;
+            --bg-gradient-3: #F50057;
+            --primary: #00E5FF;
+            --secondary: #76FF03;
+            --accent: #FFD600;
+            --dark-bg: #121212;
+            --panel-bg: rgba(18, 18, 18, 0.8);
+            --text: #FFFFFF;
+            --shadow-color: rgba(0, 229, 255, 0.6);
+        }
+        
         body {
             margin: 0;
-            background: conic-gradient(from 77deg,red,orange);
-            color: white;
+            background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3));
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+            color: var(--text);
             font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
@@ -16,29 +32,42 @@
             min-height: 100vh;
             padding-top: 20px;
         }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
         header {
             text-align: center;
             margin-bottom: 10px;
         }
+        
         h1 {
-            color: #4d9bff;
+            color: var(--primary);
             margin: 0;
             font-size: 2rem;
-            text-shadow: 0 0 10px rgba(77, 155, 255, 0.7);
+            text-shadow: 0 0 10px var(--shadow-color);
+            letter-spacing: 2px;
+            font-weight: bold;
         }
+        
         .game-container {
             position: relative;
             display: flex;
             gap: 20px;
             flex-direction: row !important;
-            
         }
+        
         canvas {
-            border: 2px solid #4d9bff;
-            border-radius: 5px;
-            box-shadow: 0 0 20px rgba(77, 155, 255, 0.3);
-            background-color: #1a1a1a;
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            box-shadow: 0 0 25px var(--shadow-color);
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
         }
+        
         .side-panel {
             display: flex;
             flex-direction: column !important;
@@ -47,13 +76,22 @@
             flex-wrap: nowrap !important;
             justify-content: flex-start !important;
         }
+        
         .info-box {
-            background-color: #2a2a2a;
-            border: 1px solid #4d9bff;
-            border-radius: 5px;
+            background-color: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
             padding: 10px;
-            box-shadow: 0 0 10px rgba(77, 155, 255, 0.2);
+            box-shadow: 0 0 15px var(--shadow-color);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
         }
+        
+        .info-box:hover {
+            box-shadow: 0 0 20px var(--primary);
+            transform: translateY(-2px);
+        }
+        
         .next-piece, .hold-piece {
             height: 150px;
             position: relative;
@@ -61,93 +99,123 @@
             flex-direction: column;
             align-items: center;
         }
+        
         .next-piece canvas, .hold-piece canvas {
-                
             position: relative;
             margin-top: 10px;
+            border: 2px solid var(--accent);
         }
+        
         .info-box h3 {
             margin-top: 0;
-            color: #4d9bff;
+            color: var(--secondary);
             font-size: 12px;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+        
         .info-box p {
             margin: 5px 0;
             text-align: center;
             font-size: 1.2rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
+        
         .controls-box {
             margin-top: 15px;
         }
+        
         .controls-box p {
             margin: 5px 0;
             font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
         }
+        
         .power-up {
             position: absolute;
             width: 30px;
             height: 30px;
-            background-color: #ffcc00;
+            background: radial-gradient(circle, var(--accent), #FF9100);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: black;
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+            color: #000;
+            box-shadow: 0 0 15px rgba(255, 214, 0, 0.8);
             animation: pulsate 1.5s infinite alternate;
         }
+        
         @keyframes pulsate {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
+            0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 214, 0, 0.7); }
+            100% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 214, 0, 0.9); }
         }
+        
         .game-over {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(40, 40, 40, 0.95));
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
             display: none;
             z-index: 10;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px var(--shadow-color);
         }
+        
         .game-over h2 {
-            color: #ff4d4d;
+            color: #FF1744;
             margin-top: 0;
+            text-shadow: 0 0 10px rgba(255, 23, 68, 0.7);
+            font-size: 2rem;
         }
+        
         .game-over button {
-            background-color: #4d9bff;
+            background: linear-gradient(to right, var(--primary), #64FFDA);
             border: none;
-            color: white;
-            padding: 10px 20px;
-            margin-top: 10px;
-            border-radius: 5px;
+            color: #000;
+            padding: 12px 24px;
+            margin-top: 15px;
+            border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
         }
+        
         .game-over button:hover {
-            background-color: #3a7fd9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.6);
         }
+        
+        .game-over button:active {
+            transform: translateY(-1px);
+        }
+        
         .game-btn.restart-btn {
-        background-color: #33cc33;
-        box-shadow: 0 0 15px rgba(51, 204, 51, 0.5);
-    }
-    
-    .game-btn.restart-btn:hover {
-        background-color: #2ba52b;
-    }
-    .game-btn.quit-btn {
-        background-color: #ff3333;
-        box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
-    }
-    
-    .game-btn.quit-btn:hover {
-        background-color: #d12a2a;
-    }
+            background: linear-gradient(to right, #00E676, #1DE9B6);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.6);
+        }
+        
+        .game-btn.restart-btn:hover {
+            background: linear-gradient(to right, #00C853, #00BFA5);
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.8);
+        }
+        
+        .game-btn.quit-btn {
+            background: linear-gradient(to right, #FF5252, #FF1744);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.6);
+        }
+        
+        .game-btn.quit-btn:hover {
+            background: linear-gradient(to right, #FF1744, #D50000);
+            box-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
+        }
+        
         .active-power-ups {
             position: absolute;
             top: 10px;
@@ -156,127 +224,155 @@
             flex-direction: column;
             gap: 5px;
         }
+        
         .active-power-up {
-            background-color: rgba(255, 204, 0, 0.3);
-            border: 1px solid #ffcc00;
-            border-radius: 5px;
-            padding: 5px;
+            background: linear-gradient(to right, rgba(255, 214, 0, 0.2), rgba(255, 145, 0, 0.2));
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 8px;
             font-size: 0.9rem;
             display: flex;
             align-items: center;
+            backdrop-filter: blur(3px);
+            box-shadow: 0 0 10px rgba(255, 214, 0, 0.3);
         }
+        
         .active-power-up-timer {
             margin-left: 10px;
             font-weight: bold;
+            color: var(--accent);
         }
+        
         .power-up-notification {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(255, 204, 0, 0.8);
-            color: black;
-            padding: 15px;
-            border-radius: 10px;
+            background: linear-gradient(to right, rgba(255, 214, 0, 0.9), rgba(255, 145, 0, 0.9));
+            color: #000;
+            padding: 18px;
+            border-radius: 15px;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.3s;
+            box-shadow: 0 0 25px rgba(255, 214, 0, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+        
         .line-pop {
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.8);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5));
             border-radius: 50%;
             pointer-events: none;
             z-index: 10;
-            animation: pop-animation 0.5s ease-out forwards;
-        }
-        @keyframes pop-animation {
-            0% { transform: scale(0); opacity: 0.9; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-            100% { transform: scale(1.5); opacity: 0; }
+            animation: pop-animation 0.6s ease-out forwards;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
         }
         
-        /* New styles for start screen and buttons */
+        @keyframes pop-animation {
+            0% { transform: scale(0); opacity: 0.9; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        
+        /* Start screen and buttons */
         .start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(50, 0, 90, 0.8));
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            backdrop-filter: blur(8px);
         }
         
         .game-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 20px;
         }
         
         .game-btn {
-            background-color: #4d9bff;
+            background: linear-gradient(to right, var(--primary), #64FFDA);
             border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s, transform 0.1s;
-            box-shadow: 0 0 15px rgba(77, 155, 255, 0.5);
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .game-btn:hover {
-            background-color: #3a7fd9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.6);
         }
         
         .game-btn:active {
-            transform: scale(0.95);
+            transform: translateY(-1px);
         }
         
         .game-btn.pause-btn {
-            background-color: #ff8e0d;
-            box-shadow: 0 0 15px rgba(255, 142, 13, 0.5);
+            background: linear-gradient(to right, #FFAB00, #FF6D00);
+            box-shadow: 0 5px 15px rgba(255, 171, 0, 0.5);
         }
         
         .game-btn.pause-btn:hover {
-            background-color: #e07c0b;
+            background: linear-gradient(to right, #FF9100, #FF6D00);
+            box-shadow: 0 8px 20px rgba(255, 171, 0, 0.7);
         }
         
         .start-screen .logo {
-            font-size: 3rem;
-            color: #4d9bff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 15px rgba(77, 155, 255, 0.8);
-            animation: pulse 1.5s infinite alternate;
+            font-size: 3.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 25px;
+            text-shadow: 0 5px 15px rgba(0, 229, 255, 0.5);
+            animation: glow 2s infinite alternate;
+            font-weight: bold;
+            letter-spacing: 4px;
         }
         
-        @keyframes pulse {
-            0% { text-shadow: 0 0 15px rgba(77, 155, 255, 0.5); }
-            100% { text-shadow: 0 0 25px rgba(77, 155, 255, 0.9); }
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+            100% { text-shadow: 0 0 30px rgba(0, 229, 255, 0.9), 0 0 50px rgba(0, 229, 255, 0.5); }
         }
         
-        /* New Leaderboard Styles */
+        /* Leaderboard Styles */
         .leaderboard {
-            background-color: #2a2a2a;
-            border: 1px solid #4d9bff;
-            border-radius: 5px;
-            padding: 10px;
+            background-color: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
             width: 200px;
             margin-top: 20px;
-            box-shadow: 0 0 10px rgba(77, 155, 255, 0.2);
+            box-shadow: 0 0 15px var(--shadow-color);
+            backdrop-filter: blur(5px);
         }
         
         .leaderboard h3 {
-            color: #4d9bff;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             text-align: center;
             margin-top: 0;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .leaderboard-list {
@@ -288,8 +384,13 @@
         .leaderboard-item {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(77, 155, 255, 0.3);
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateX(5px);
         }
         
         .leaderboard-item:last-child {
@@ -297,9 +398,10 @@
         }
         
         .leaderboard-rank {
-            color: #ffcc00;
+            color: var(--accent);
             font-weight: bold;
-            margin-right: 5px;
+            margin-right: 10px;
+            text-shadow: 0 0 5px rgba(255, 214, 0, 0.5);
         }
         
         .leaderboard-name {
@@ -312,7 +414,8 @@
         
         .leaderboard-score {
             font-weight: bold;
-            color: #4d9bff;
+            color: var(--primary);
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
         }
         
         /* High Score Input Styles */
@@ -321,41 +424,52 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 20px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(40, 40, 40, 0.95));
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
             z-index: 11;
-            border: 2px solid #4d9bff;
+            border: 2px solid var(--primary);
             display: none;
+            box-shadow: 0 0 30px var(--shadow-color);
+            backdrop-filter: blur(10px);
         }
         
         .high-score-input h2 {
-            color: #ffcc00;
+            background: linear-gradient(to right, var(--accent), #FF9100);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             margin-top: 0;
+            font-size: 1.8rem;
         }
         
         .high-score-input p {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
         }
         
         .high-score-input input {
-            padding: 8px;
+            padding: 12px;
             width: 80%;
-            border-radius: 5px;
-            border: 1px solid #4d9bff;
-            background-color: #1a1a1a;
+            border-radius: 50px;
+            border: 2px solid var(--primary);
+            background-color: rgba(18, 18, 18, 0.7);
             color: white;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            transition: all 0.3s;
         }
         
         .high-score-input input:focus {
             outline: none;
-            box-shadow: 0 0 5px #4d9bff;
+            box-shadow: 0 0 20px var(--primary);
+            border-color: var(--secondary);
         }
         
-        /* Media query for smaller screens */
+        /* Media query for smaller screens - KEEPING THE SAME LAYOUT SIZE AS REQUESTED */
         @media (max-width: 1000px) {
             .game-container {
                 flex-direction: column !important;
@@ -381,10 +495,28 @@
                 width: 300px;
                 margin-top: 15px;
             }
+            #muteButton {
+        background-color: #555;
+        margin-left: 10px;
+    }
+    
+    #muteButton:hover {
+        background-color: #666;
+    }
+    
+    /* Add a small speaker icon to indicate sound functionality */
+    #muteButton::before {
+        content: "🔊 ";
+        font-size: 12px;
+    }
+    
+    /* When muted, change the icon */
+    .muted #muteButton::before {
+        content: "🔇 ";
+    }
         }
     </style>
-</head>
-</html>
+    
     </head>
     <body>
         <header>
@@ -392,6 +524,7 @@
         </header>
         
         <div class="game-buttons">
+            <button id="muteButton" class="game-button">Mute</button>
             <button id="startButton" class="game-btn">Start Game</button>
             <button id="restartButton" class="game-btn restart-btn">Restart</button>
             <button id="pauseButton" class="game-btn pause-btn">Pause</button>
@@ -531,6 +664,83 @@
                     duration: 5000 // 5 seconds
                 }
             };
+            // Sound Effects Implementation
+        // Audio elements for sound effects
+        // Background Music Implementation
+        const bgMusic = {
+            theme: new Audio('https://assets.mixkit.co/active_storage/sfx/689/689-preview.mp3'), // Cheerful game music
+            gameOver: new Audio('https://audio-previews.elements.envatousercontent.com/files/301328245/preview.mp3?response-content-disposition=attachment%3B+filename%3D%22LEL2CGQ-game-fx-game-over-02.mp3%22') // Game over sound
+        };
+        const sfx = {
+            pop: new Audio('https://audio-previews.elements.envatousercontent.com/files/105394911/preview.mp3'),
+            powerUp: new Audio('https://audio-previews.elements.envatousercontent.com/files/144127499/preview.mp3?response-content-disposition=attachment%3B+filename%3D%22QYUF9HW-game-liquid-game-hit.mp3%22')
+        };
+
+        // Set volume for all sound effects
+        for (const sound in sfx) {
+            sfx[sound].volume = 0.5; // Set to 50% volume by default
+        }
+
+        // Function to play sound effects with optional volume parameter
+        function playSfx(soundName, volume = 0.5) {
+            // Check if the sound exists
+            if (!sfx[soundName]) {
+                console.warn(`Sound effect "${soundName}" not found`);
+                return;
+            }
+            
+            // Set the volume
+            sfx[soundName].volume = volume;
+            
+            // Stop and reset the sound to ensure it plays from the beginning
+            sfx[soundName].pause();
+            sfx[soundName].currentTime = 0;
+            
+            // Play the sound
+            sfx[soundName].play().catch(error => {
+                // Handle autoplay restrictions gracefully
+                console.warn(`Failed to play sound "${soundName}": ${error}`);
+            });
+        }
+        bgMusic.theme.volume = 0.3; // Lower volume for background music
+        bgMusic.theme.loop = true; // Loop the background music
+        bgMusic.gameOver.volume = 0.5;
+
+        // Add a mute toggle function and button
+        let isMuted = false;
+        function toggleMute() {
+    isMuted = !isMuted;
+    
+    // Update all sound effects
+    for (const sound in sfx) {
+        sfx[sound].muted = isMuted;
+    }
+    
+    // Also mute background music
+    bgMusic.theme.muted = isMuted;
+    bgMusic.gameOver.muted = isMuted;
+    
+    // Update button text
+    const muteButton = document.getElementById('muteButton');
+    if (muteButton) {
+        muteButton.textContent = isMuted ? 'Unmute' : 'Mute';
+    }
+}
+                // Set up event listener for mute button
+            document.getElementById('muteButton').addEventListener('click', toggleMute);
+            
+            
+            // Preload sounds
+        window.addEventListener('DOMContentLoaded', () => {
+            // Preload all sounds to prevent loading delays during gameplay
+            for (const sound in sfx) {
+                sfx[sound].load();
+            }
+            
+            // Preload background music
+            bgMusic.theme.load();
+            bgMusic.gameOver.load();
+        });
 
             // Game variables
             let canvas = document.getElementById('gameCanvas');
@@ -591,6 +801,41 @@
                 hold: null,
                 canHold: true
             };
+            function startBackgroundMusic() {
+            bgMusic.theme.currentTime = 0;
+            bgMusic.theme.play().catch(error => {
+            console.warn(`Failed to play background music: ${error}`);
+    });
+}
+        function stopBackgroundMusic() {
+        bgMusic.theme.pause();
+        bgMusic.theme.currentTime = 0;
+}
+        function playGameOverSound() {
+         bgMusic.gameOver.currentTime = 0;
+        bgMusic.gameOver.play().catch(error => {
+        console.warn(`Failed to play game over sound: ${error}`);
+    });
+}   
+                function showGameOver() {
+            gameOver = true;
+            stopBackgroundMusic();
+            playGameOverSound();
+            
+            // Display game over panel
+            finalScoreElement.textContent = score;
+            gameOverPanel.style.display = 'block';
+            
+            // Check if it's a high score
+            isHighScore = checkHighScore();
+            if (isHighScore) {
+                // Show high score input before the game over screen
+                showHighScoreInput();
+            }
+            
+            // Cancel the animation frame to stop the game loop
+            cancelAnimationFrame(animationId);
+        }
 
             // Initialize the game
             function init() {
@@ -747,6 +992,7 @@
                     startScreenElement.style.display = 'none';
                     pauseButton.textContent = 'Pause';
                     init();
+                    startBackgroundMusic(); // Start the background music
                     lastTime = performance.now();
                     cancelAnimationFrame(animationId); // Cancel any existing animation
                     update(); // Start the game loop
@@ -759,7 +1005,7 @@
                 }
             }
 
-            // Toggle pause state
+            
              // Toggle pause state
         function togglePause() {
             if (!gameStarted || gameOver) return;
@@ -769,8 +1015,13 @@
             
             if (!isPaused) {
                 lastTime = performance.now();
+                cancelAnimationFrame(animationId);
+                bgMusic.theme.play(); // Resume background music
                 update();
             } else {
+                lastTime = performance.now();
+                update();
+                bgMusic.theme.pause(); // Pause background music
                 // Show pause message on canvas
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -839,13 +1090,18 @@
 
             // Reset player position
             function playerReset() {
-        player.matrix = player.next;
-        player.next = getRandomPiece();
-        player.pos.y = 0;
-        player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
-        player.canHold = true;
-        
-        drawNextPiece();
+    player.matrix = player.next;
+    player.next = getRandomPiece();
+    drawNextPiece();
+    
+    player.pos.y = 0;
+    player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+    
+    // Check if the game is over
+    if (checkCollision()) {
+        showGameOver();
+    }
+
         
         // Check if game over: If the piece overlaps with existing blocks
         if (checkCollision()) {
@@ -1243,25 +1499,25 @@
     }
 
             // Activate a power-up
-        function activatePowerUp(type) {
-        // Create more dramatic notification with animation
-        powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
-        powerUpNotificationElement.style.opacity = '1';
-        powerUpNotificationElement.style.backgroundColor = POWER_UPS[type].color;
-        powerUpNotificationElement.style.transform = 'scale(1.2)';
-        
-        // Add sound effect placeholder (you can add actual sounds later)
-        // console.log(`Playing power-up sound for: ${type}`);
-        
-        // Reset animation after a brief moment
-        setTimeout(() => {
-            powerUpNotificationElement.style.transform = 'scale(1)';
-        }, 200);
-        
-        // Hide notification after delay
-        setTimeout(() => {
-            powerUpNotificationElement.style.opacity = '0';
-        }, 2000);
+            function activatePowerUp(type) {
+    // Play power-up sound
+    if (!isMuted) playSfx('powerUp', 0.5);
+    
+    // Create more dramatic notification with animation
+    powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
+    powerUpNotificationElement.style.opacity = '1';
+    powerUpNotificationElement.style.backgroundColor = POWER_UPS[type].color;
+    powerUpNotificationElement.style.transform = 'scale(1.2)';
+    
+    // Reset animation after a brief moment
+    setTimeout(() => {
+        powerUpNotificationElement.style.transform = 'scale(1)';
+    }, 200);
+    
+    // Hide notification after delay
+    setTimeout(() => {
+        powerUpNotificationElement.style.opacity = '0';
+    }, 2000);
         
         // Apply power-up effect with improvements
         switch(type) {
@@ -1721,21 +1977,48 @@ function gameLoop() {
 
             // Drop the piece
             function playerDrop() {
-        player.pos.y++;
+    player.pos.y++;
+    
+    // Check for collision
+    if (checkCollision()) {
+        player.pos.y--;
+        merge();
+        playerReset();
+        arenaSweep();
+    } else {
+        // Play soft drop sound
+        if (!isMuted) playSfx('softDrop', 0.3);
         
-        // Check for collision
-        if (checkCollision()) {
-            player.pos.y--;
-            merge();
-            playerReset();
-            arenaSweep();
-        } else {
-            // Check for power-up collection during drop
-            checkPowerUpCollection();
-        }
-        
-        dropCounter = 0;
+        // Check for power-up collection during drop
+        checkPowerUpCollection();
     }
+    
+    dropCounter = 0;
+}
+function hardDrop() {
+    let dropDistance = 0;
+    while (!checkCollision(player.matrix, {x: player.pos.x, y: player.pos.y + 1})) {
+        player.pos.y++;
+        dropDistance++;
+        
+        // Check for power-up collection during hard drop
+        checkPowerUpCollection();
+    }
+    
+    // Play hard drop sound if actually dropped
+    if (dropDistance > 0 && !isMuted) {
+        playSfx('hardDrop', 0.4);
+    }
+    
+    // Add score for each cell dropped
+    updateScore(score + dropDistance);
+    
+    // Lock the piece and process
+    merge();
+    playerReset();
+    arenaSweep();
+    dropCounter = 0;
+}
 
 
             // Move the piece sideways
@@ -1802,7 +2085,7 @@ function gameLoop() {
 
 
         // Check and clear completed rows
-function arenaSweep() {
+        function arenaSweep() {
     let rowsCleared = 0;
     
     // Check each row from bottom to top
@@ -1844,6 +2127,17 @@ function arenaSweep() {
     if (rowsCleared === 0) {
         comboCount = 0;
         return;
+    }
+    
+    // Play appropriate sound based on lines cleared
+    if (!isMuted) {
+        if (rowsCleared >= 4) {
+            // Tetris!
+            playSfx('pop', 0.7);
+        } else {
+            // Normal line clear
+            playSfx('pop', 0.5);
+        }
     }
     
     // Update combo count for consecutive line clears
@@ -1891,6 +2185,9 @@ function arenaSweep() {
     const newLevel = Math.floor(lines / 10) + 1;
     if (newLevel > level) {
         updateLevel(newLevel);
+        
+        // Play level up sound
+        if (!isMuted) playSfx('levelUp', 0.6);
         
         // Increase game speed with each level
         dropInterval = originalDropInterval * Math.pow(0.8, level - 1);
