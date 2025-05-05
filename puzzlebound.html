@@ -686,7 +686,7 @@
         };
         const sfx = {
             pop: new Audio('https://audio-previews.elements.envatousercontent.com/files/105394911/preview.mp3'),
-            powerUp: new Audio('https://audio-previews.elements.envatousercontent.com/files/144127499/preview.mp3?response-content-disposition=attachment%3B+filename%3D%22QYUF9HW-game-liquid-game-hit.mp3%22')
+            powerUp: new Audio('https://audio-previews.elements.envatousercontent.com/files/268882624/preview.mp3?response-content-disposition=attachment%3B+filename%3D%22YPE5ZXG-power-up.mp3%22')
         };
 
         // Set volume for all sound effects
@@ -1127,9 +1127,6 @@
     function holdPiece() {
     // Only allow hold if not already used for current piece
     if (!player.canHold || isPaused || gameOver) return;
-    
-    // Play sound effect
-    playSfx('pop', 0.3);
     
     if (player.hold === null) {
         // First hold - store current piece and get next piece
