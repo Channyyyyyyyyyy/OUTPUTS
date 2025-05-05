@@ -495,25 +495,40 @@
                 width: 300px;
                 margin-top: 15px;
             }
-            #muteButton {
-        background-color: #555;
-        margin-left: 10px;
-    }
-    
-    #muteButton:hover {
-        background-color: #666;
-    }
-    
-    /* Add a small speaker icon to indicate sound functionality */
-    #muteButton::before {
-        content: "🔊 ";
-        font-size: 12px;
-    }
-    
-    /* When muted, change the icon */
-    .muted #muteButton::before {
-        content: "🔇 ";
-    }
+            muteButton {
+    background: linear-gradient(to right, #FFAB00, #FF6D00);
+    border: none;
+    color: #000;
+    padding: 12px 24px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(255, 171, 0, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-left: 10px;
+}
+
+#muteButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 171, 0, 0.7);
+    background: linear-gradient(to right, #FF9100, #FF6D00);
+}
+
+#muteButton:active {
+    transform: translateY(-1px);
+}
+
+/* When muted, change the icon */
+.muted #muteButton::before {
+    content: "🔇 ";
+}
+
+/* Add a small speaker icon to indicate sound functionality */
+#muteButton::before {
+    content: "🔊 ";
+}
         }
     </style>
     
@@ -524,9 +539,8 @@
         </header>
         
         <div class="game-buttons">
-            <button id="muteButton" class="game-button">Mute</button>
+            <button id="muteButton" class="game-btn">Mute</button>
             <button id="startButton" class="game-btn">Start Game</button>
-            <button id="restartButton" class="game-btn restart-btn">Restart</button>
             <button id="pauseButton" class="game-btn pause-btn">Pause</button>
             <button id="quitButton" class="game-btn quit-btn">Quit</button>
             <button id="showLeaderboardButton" class="game-btn">Leaderboard</button>
@@ -590,7 +604,6 @@
             <div id="gameOver" class="game-over">
                 <h2>GAME OVER</h2>
                 <p>Your score: <span id="finalScore">0</span></p>
-                <button id="gameOverRestartButton" class="game-btn">Play Again</button>
                 <button id="gameOverQuitButton" class="game-btn quit-btn" style="margin-top: 10px;">Quit to Menu</button>
             </div>
             
@@ -754,9 +767,8 @@
             let linesElement = document.getElementById('lines');
             let gameOverPanel = document.getElementById('gameOver');
             let finalScoreElement = document.getElementById('finalScore');
-            let restartButton = document.getElementById('restartButton');
             let quitButton = document.getElementById('quitButton');
-            let gameOverRestartButton = document.getElementById('gameOverRestartButton');
+            // Removed reference to restart button
             let gameOverQuitButton = document.getElementById('gameOverQuitButton');
             let activePowerUpsElement = document.getElementById('activePowerUps');
             let powerUpNotificationElement = document.getElementById('powerUpNotification');
@@ -1004,8 +1016,7 @@
                     update();
                 }
             }
-
-            
+             
              // Toggle pause state
         function togglePause() {
             if (!gameStarted || gameOver) return;
@@ -1037,23 +1048,12 @@
             }
         }
 
-        // Restart game
-        function restartGame() {
-            gameStarted = true;
-            gameOver = false;
-            isPaused = false;
-            pauseButton.textContent = 'Pause';
-            init();
-            lastTime = performance.now();
-            cancelAnimationFrame(animationId);
-            update();
-        }
-
         // Quit to main menu
         function quitToMenu() {
             gameStarted = false;
             gameOver = false;
             isPaused = false;
+            bgMusic.theme.pause();
             startScreenElement.style.display = 'flex';
             gameOverPanel.style.display = 'none';
             highScoreInput.style.display = 'none';
@@ -1061,7 +1061,6 @@
             // Update leaderboard display on start screen
             updateLeaderboardDisplay();
         }
-
 
             // Toggle leaderboard visibility
             function toggleLeaderboard() {
@@ -1126,26 +1125,60 @@
     }
     // Hold the current piece
     function holdPiece() {
-            if (!player.canHold) return;
-            
-            if (player.hold === null) {
-                player.hold = player.matrix;
-                player.matrix = player.next;
-                player.next = getRandomPiece();
-                drawNextPiece();
-            } else {
-                const temp = player.matrix;
-                player.matrix = player.hold;
-                player.hold = temp;
-            }
-            
-            // Reset position
-            player.pos.y = 0;
-            player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
-            player.canHold = false;
-            
-            drawHoldPiece();
-        }
+    // Only allow hold if not already used for current piece
+    if (!player.canHold || isPaused || gameOver) return;
+    
+    // Play sound effect
+    playSfx('pop', 0.3);
+    
+    if (player.hold === null) {
+        // First hold - store current piece and get next piece
+        player.hold = player.matrix;
+        player.matrix = player.next;
+        player.next = getRandomPiece();
+        drawNextPiece();
+    } else {
+        // Swap hold piece with current piece
+        const temp = player.matrix;
+        player.matrix = player.hold;
+        player.hold = temp;
+    }
+    
+    // Reset position properly
+    player.pos.y = 0;
+    player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+    
+    // Prevent holding again until piece is placed
+    player.canHold = false;
+    
+    // Draw the hold piece
+    drawHoldPiece();
+}
+
+// Fixed player reset function to re-enable hold capability
+function playerReset() {
+    player.matrix = player.next;
+    player.next = getRandomPiece();
+    drawNextPiece();
+    
+    player.pos.y = 0;
+    player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+    
+    // Re-enable hold capability for the new piece
+    player.canHold = true;
+    
+    // Check if the game is over
+    if (checkCollision()) {
+        showGameOver();
+        return;
+    }
+    
+    // Randomly spawn a power-up with probability that increases with level
+    const spawnProbability = powerUpChance + (level * 0.01);
+    if (Math.random() < spawnProbability) {
+        spawnPowerUp();
+    }
+}
 
         // Draw the hold piece
         function drawHoldPiece() {
@@ -1501,7 +1534,7 @@
             // Activate a power-up
             function activatePowerUp(type) {
     // Play power-up sound
-    if (!isMuted) playSfx('powerUp', 0.5);
+    playSfx('powerUp', 0.5);
     
     // Create more dramatic notification with animation
     powerUpNotificationElement.textContent = `Power-Up: ${POWER_UPS[type].effect}`;
@@ -1518,241 +1551,249 @@
     setTimeout(() => {
         powerUpNotificationElement.style.opacity = '0';
     }, 2000);
-        
-        // Apply power-up effect with improvements
-        switch(type) {
-            case 'CLEAR_ROW':
-                // Clear a random row that has at least one block
-                let filledRows = [];
-                for (let y = 0; y < ROWS; y++) {
-                    let hasBlocks = false;
-                    for (let x = 0; x < COLS; x++) {
-                        if (board[y][x] !== 0) {
-                            hasBlocks = true;
-                            break;
-                        }
-                    }
-                    if (hasBlocks) {
-                        filledRows.push(y);
+    
+    // Apply power-up effect with improvements
+    switch(type) {
+        case 'CLEAR_ROW':
+            // Clear a random row that has at least one block
+            let filledRows = [];
+            for (let y = 0; y < ROWS; y++) {
+                let hasBlocks = false;
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x] !== 0) {
+                        hasBlocks = true;
+                        break;
                     }
                 }
-                
-                if (filledRows.length > 0) {
-                    // Select a random filled row
-                    const randomRow = filledRows[Math.floor(Math.random() * filledRows.length)];
-                    
-                    // Enhanced visual effect before clearing
-                    for (let x = 0; x < COLS; x++) {
-                        // Store original color
-                        const blockValue = board[randomRow][x];
-                        if (blockValue !== 0) {
-                            // Create special "about to clear" effect
-                            lineClearEffects.push({
-                                x: (x + 0.5) * BLOCK_SIZE,
-                                y: (randomRow + 0.5) * BLOCK_SIZE,
-                                radius: BLOCK_SIZE / 2,
-                                opacity: 1
-                            });
-                        }
-                    }
-                    
-                    // Delay the actual clearing for visual effect
-                    setTimeout(() => {
-                        // Clear the row
-                        for (let x = 0; x < COLS; x++) {
-                            board[randomRow][x] = 0;
-                        }
-                        
-                        // Create more dramatic clear effects
-                        for (let i = 0; i < 10; i++) {
-                            lineClearEffects.push({
-                                x: (Math.random() * COLS) * BLOCK_SIZE,
-                                y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
-                                radius: 5 + Math.random() * 10,
-                                opacity: 0.8
-                            });
-                        }
-                        
-                        // Move rows down
-                        for (let y = randomRow; y > 0; y--) {
-                            for (let x = 0; x < COLS; x++) {
-                                board[y][x] = board[y - 1][x];
-                            }
-                        }
-                        
-                        // Clear top row
-                        board[0].fill(0);
-                        
-                        // Update score and line count with bonus for power-up use
-                        updateScore(score + 150 * level); // Increased from 100 to 150
-                        updateLines(lines + 1);
-                    }, 100);
-                }
-                break;
-            
-                case 'SLOW_DOWN':
-    try {
-        if (activePowerUps[type]) {
-            // Power-up already active - just extend duration
-            clearTimeout(activePowerUps[type].timer);
-            
-            // Update display if it exists
-            if (activePowerUps[type].element) {
-                const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
-                if (timerElement) {
-                    timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                if (hasBlocks) {
+                    filledRows.push(y);
                 }
             }
             
-            // Set new expiration timer
-            activePowerUps[type].timer = setTimeout(() => {
-                try {
-                    // Restore original block speed
-                    blockSpeed = activePowerUps[type].originalBlockSpeed;
-                    
-                    // Apply speed to all existing blocks
-                    blocks.forEach(block => {
-                        block.speed = blockSpeed;
-                    });
-                    
-                    // Clean up
-                    removeActivePowerUpDisplay(type);
-                    delete activePowerUps[type];
-                } catch (error) {
-                    console.error("Error in slow-down expiration:", error);
+            if (filledRows.length > 0) {
+                // Select a random filled row
+                const randomRow = filledRows[Math.floor(Math.random() * filledRows.length)];
+                
+                // Enhanced visual effect before clearing
+                for (let x = 0; x < COLS; x++) {
+                    // Store original color
+                    const blockValue = board[randomRow][x];
+                    if (blockValue !== 0) {
+                        // Create special "about to clear" effect
+                        lineClearEffects.push({
+                            x: (x + 0.5) * BLOCK_SIZE,
+                            y: (randomRow + 0.5) * BLOCK_SIZE,
+                            radius: BLOCK_SIZE / 2,
+                            opacity: 1
+                        });
+                    }
                 }
-            }, POWER_UPS[type].duration);
-        } else {
-            // First activation - store current block speed before changing it
-            const currentBlockSpeed = blockSpeed || getDefaultBlockSpeed();
-            
-            activePowerUps[type] = {
-                startTime: performance.now(),
-                originalBlockSpeed: currentBlockSpeed, // Store current block speed
-                element: null
-            };
-            
-            // Apply the effect - reduce block speed by half
-            blockSpeed = currentBlockSpeed * 0.5;
-            
-            // Apply new speed to all existing blocks
-            blocks.forEach(block => {
-                block.speed = blockSpeed;
-            });
-            
-            // Set expiration timer
-            activePowerUps[type].timer = setTimeout(() => {
-                try {
-                    // Restore speed
-                    blockSpeed = activePowerUps[type].originalBlockSpeed;
+                
+                // Delay the actual clearing for visual effect
+                setTimeout(() => {
+                    // Clear the row
+                    for (let x = 0; x < COLS; x++) {
+                        board[randomRow][x] = 0;
+                    }
                     
-                    // Apply original speed to all existing blocks
-                    blocks.forEach(block => {
-                        block.speed = blockSpeed;
-                    });
+                    // Create more dramatic clear effects
+                    for (let i = 0; i < 10; i++) {
+                        lineClearEffects.push({
+                            x: (Math.random() * COLS) * BLOCK_SIZE,
+                            y: randomRow * BLOCK_SIZE + BLOCK_SIZE / 2,
+                            radius: 5 + Math.random() * 10,
+                            opacity: 0.8
+                        });
+                    }
                     
-                    // Clean up
-                    removeActivePowerUpDisplay(type);
-                    delete activePowerUps[type];
-                } catch (error) {
-                    console.error("Error in slow-down expiration:", error);
-                }
-            }, POWER_UPS[type].duration);
-            
-            // Add visual indicator
-            activePowerUps[type].element = addActivePowerUpDisplay(type, POWER_UPS[type].duration);
-        }
-    } catch (error) {
-        console.error("Error in SLOW_DOWN power-up:", error);
-        // Fail gracefully - don't let an error stop the game
-    }
-    break;
-            
-            case 'MULTI_CLEAR':
-                // Improved multi-clear with visual indicator
-                if (activePowerUps[type]) {
-                    // If already active, extend the duration
-                    clearTimeout(activePowerUps[type].timer);
-                    activePowerUps[type].startTime = performance.now();
-                    
-                    // Update the display
-                    if (activePowerUps[type].element) {
-                        const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
-                        if (timerElement) {
-                            timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                    // Move rows down
+                    for (let y = randomRow; y > 0; y--) {
+                        for (let x = 0; x < COLS; x++) {
+                            board[y][x] = board[y - 1][x];
                         }
                     }
                     
-                    // Set new timeout
-                    activePowerUps[type].timer = setTimeout(() => {
-                        endPowerUpEffect(type);
-                    }, POWER_UPS[type].duration);
-                } else {
-                    // Add subtle board highlighting to indicate multi-clear is active
-                    canvas.style.boxShadow = `0 0 20px ${POWER_UPS[type].color}`;
+                    // Clear top row
+                    board[0].fill(0);
                     
-                    // Create new active power-up entry
-                    activePowerUps[type] = {
-                        startTime: performance.now(),
-                        duration: POWER_UPS[type].duration,
-                        element: createActivePowerUpElement(type),
-                        timer: null
-                    };
-                    
-                    // Set timer to end effect
-                    activePowerUps[type].timer = setTimeout(() => {
-                        endPowerUpEffect(type);
-                        // Remove board highlighting
-                        canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
-                    }, POWER_UPS[type].duration);
-                }
-                break;
-            
-            case 'TIME_FREEZE':
-                // Enhanced time freeze with visual effects
-                if (activePowerUps[type]) {
-                    // If already active, extend the duration
-                    clearTimeout(activePowerUps[type].timer);
-                    activePowerUps[type].startTime = performance.now();
-                    
-                    // Update the display
-                    if (activePowerUps[type].element) {
-                        const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
-                        if (timerElement) {
-                            timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
-                        }
+                    // Update score and line count with bonus for power-up use
+                    updateScore(score + 150 * level); // Increased from 100 to 150
+                    updateLines(lines + 1);
+                }, 100);
+            }
+            break;
+        
+        case 'SLOW_DOWN':
+            // Fixed SLOW_DOWN power-up
+            if (activePowerUps[type]) {
+                // Power-up already active - just extend duration
+                clearTimeout(activePowerUps[type].timer);
+                
+                // Update display if it exists
+                if (activePowerUps[type].element) {
+                    const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                    if (timerElement) {
+                        timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
                     }
-                    
-                    // Set new timeout
-                    activePowerUps[type].timer = setTimeout(() => {
-                        endPowerUpEffect(type);
-                    }, POWER_UPS[type].duration);
-                } else {
-                    // Store original interval
-                    originalDropInterval = dropInterval;
-                    dropInterval = 9999999; // Effectively stop dropping
-                    
-                    // Add freeze visual effect
-                    canvas.style.filter = 'brightness(1.2) saturate(0.8)';
-                    
-                    // Create new active power-up entry
-                    activePowerUps[type] = {
-                        startTime: performance.now(),
-                        duration: POWER_UPS[type].duration,
-                        element: createActivePowerUpElement(type),
-                        timer: null
-                    };
-                    
-                    // Set timer to end effect
-                    activePowerUps[type].timer = setTimeout(() => {
-                        endPowerUpEffect(type);
-                        // Remove freeze visual effect
-                        canvas.style.filter = 'none';
-                    }, POWER_UPS[type].duration);
                 }
-                break;
-        }
+                
+                // Set new expiration timer
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Restore original drop interval
+                    dropInterval = activePowerUps[type].originalDropInterval;
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // Store original interval
+                const originalDropInterval = dropInterval;
+                
+                // Apply effect - slow down piece falling by half
+                dropInterval = dropInterval * 2;
+                
+                // Track active power-up
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    originalDropInterval: originalDropInterval,
+                    duration: POWER_UPS[type].duration,
+                    element: createActivePowerUpElement(type),
+                    timer: null
+                };
+                
+                // Set expiration timer
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Restore original drop interval
+                    dropInterval = activePowerUps[type].originalDropInterval;
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            }
+            break;
+        
+        case 'MULTI_CLEAR':
+            // Improved multi-clear with visual indicator
+            if (activePowerUps[type]) {
+                // If already active, extend the duration
+                clearTimeout(activePowerUps[type].timer);
+                activePowerUps[type].startTime = performance.now();
+                
+                // Update the display
+                if (activePowerUps[type].element) {
+                    const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                    if (timerElement) {
+                        timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                    }
+                }
+                
+                // Set new timeout
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Remove board highlighting
+                    canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // Add subtle board highlighting to indicate multi-clear is active
+                canvas.style.boxShadow = `0 0 20px ${POWER_UPS[type].color}`;
+                
+                // Create new active power-up entry
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    duration: POWER_UPS[type].duration,
+                    element: createActivePowerUpElement(type),
+                    timer: null
+                };
+                
+                // Set timer to end effect
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Remove board highlighting
+                    canvas.style.boxShadow = '0 0 20px rgba(77, 155, 255, 0.3)';
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            }
+            break;
+        
+        case 'TIME_FREEZE':
+            // Enhanced time freeze with visual effects
+            if (activePowerUps[type]) {
+                // If already active, extend the duration
+                clearTimeout(activePowerUps[type].timer);
+                activePowerUps[type].startTime = performance.now();
+                
+                // Update the display
+                if (activePowerUps[type].element) {
+                    const timerElement = activePowerUps[type].element.querySelector('.active-power-up-timer');
+                    if (timerElement) {
+                        timerElement.textContent = `${Math.ceil(POWER_UPS[type].duration / 1000)}s`;
+                    }
+                }
+                
+                // Set new timeout
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Restore original drop interval
+                    dropInterval = activePowerUps[type].originalDropInterval;
+                    
+                    // Remove freeze visual effect
+                    canvas.style.filter = 'none';
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            } else {
+                // Store original interval
+                const originalDropInterval = dropInterval;
+                dropInterval = 9999999; // Effectively stop dropping
+                
+                // Add freeze visual effect
+                canvas.style.filter = 'brightness(1.2) saturate(0.8)';
+                
+                // Create new active power-up entry
+                activePowerUps[type] = {
+                    startTime: performance.now(),
+                    duration: POWER_UPS[type].duration,
+                    originalDropInterval: originalDropInterval,
+                    element: createActivePowerUpElement(type),
+                    timer: null
+                };
+                
+                // Set timer to end effect
+                activePowerUps[type].timer = setTimeout(() => {
+                    // Restore original drop interval
+                    dropInterval = activePowerUps[type].originalDropInterval;
+                    
+                    // Remove freeze visual effect
+                    canvas.style.filter = 'none';
+                    
+                    // Clean up
+                    if (activePowerUps[type].element && activePowerUps[type].element.parentNode) {
+                        activePowerUps[type].element.parentNode.removeChild(activePowerUps[type].element);
+                    }
+                    delete activePowerUps[type];
+                }, POWER_UPS[type].duration);
+            }
+            break;
     }
+}
 
 
             // Create and add active power-up indicator
@@ -2426,14 +2467,9 @@ function hardDrop() {
             // Button event listeners
             startButton.addEventListener('click', startGame);
             quitButton.addEventListener('click', quitToMenu);
-            gameOverRestartButton.addEventListener('click', restartGame);
             gameOverQuitButton.addEventListener('click', quitToMenu);
             startScreenButton.addEventListener('click', startGame);
             pauseButton.addEventListener('click', togglePause);
-            restartButton.addEventListener('click', () => {
-                gameOverPanel.style.display = 'none';
-                startGame();
-            });
             showLeaderboardButton.addEventListener('click', toggleLeaderboard);
             saveScoreButton.addEventListener('click', saveHighScore);
 
